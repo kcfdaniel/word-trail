@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { MatchResult } from '~/composables/useFuzzyMatch'
 
+const router = useRouter()
+
 const {
   isListening,
   isSupported,
@@ -34,17 +36,13 @@ const handleLanguageSelect = (lang: string) => {
 }
 
 const {
-  scripts,
   currentScript,
   scriptWords,
   currentIndex,
   isLoaded,
   getProgress,
   activeWordIndex,
-  setCurrentScript,
-  createScript,
   updateScript,
-  deleteScript,
   handleMatch,
   setPositionAt,
   resetProgress
@@ -54,7 +52,6 @@ const { findBestMatch } = useFuzzyMatch()
 const { isDebugEnabled, showDebugPanel, toggleDebugPanel } = useDebugMode()
 
 const showEditor = ref(false)
-const editCurrentScript = ref(false)
 const lastMatch = ref<MatchResult | null>(null)
 
 // Combine final transcript + interim for full spoken words
@@ -102,18 +99,16 @@ const handleReset = () => {
 }
 
 const handleEdit = () => {
-  editCurrentScript.value = true
-  showEditor.value = true
-}
-
-const handleOpenScriptsList = () => {
-  editCurrentScript.value = false
+  if (!currentScript.value) {
+    // No script loaded, go to scripts page
+    router.push('/scripts')
+    return
+  }
   showEditor.value = true
 }
 
 const handleCloseEditor = () => {
   showEditor.value = false
-  editCurrentScript.value = false
 }
 
 const handleWordClick = (wordId: number) => {
@@ -123,21 +118,8 @@ const handleWordClick = (wordId: number) => {
   resetSpeech()
 }
 
-const handleCreateScript = (title: string, content: string) => {
-  createScript(title, content)
-}
-
-const handleSelectScript = (script: typeof scripts.value[0]) => {
-  setCurrentScript(script)
-  resetSpeech()
-}
-
 const handleUpdateScript = (id: string, updates: { title?: string, content?: string }) => {
   updateScript(id, updates)
-}
-
-const handleDeleteScript = (id: string) => {
-  deleteScript(id)
 }
 </script>
 
@@ -204,7 +186,7 @@ const handleDeleteScript = (id: string) => {
         <button
           class="header-button"
           title="Manage scripts"
-          @click="handleOpenScriptsList"
+          @click="router.push('/scripts')"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -316,13 +298,8 @@ const handleDeleteScript = (id: string) => {
         class="editor-overlay"
       >
         <ScriptEditor
-          :scripts="scripts"
           :current-script="currentScript"
-          :edit-current="editCurrentScript"
-          @create="handleCreateScript"
-          @select="handleSelectScript"
           @update="handleUpdateScript"
-          @delete="handleDeleteScript"
           @close="handleCloseEditor"
         />
       </div>
