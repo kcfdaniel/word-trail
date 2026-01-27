@@ -54,6 +54,7 @@ const { findBestMatch } = useFuzzyMatch()
 const { isDebugEnabled, showDebugPanel, toggleDebugPanel } = useDebugMode()
 
 const showEditor = ref(false)
+const editCurrentScript = ref(false)
 const lastMatch = ref<MatchResult | null>(null)
 
 // Combine final transcript + interim for full spoken words
@@ -101,7 +102,18 @@ const handleReset = () => {
 }
 
 const handleEdit = () => {
+  editCurrentScript.value = true
   showEditor.value = true
+}
+
+const handleOpenScriptsList = () => {
+  editCurrentScript.value = false
+  showEditor.value = true
+}
+
+const handleCloseEditor = () => {
+  showEditor.value = false
+  editCurrentScript.value = false
 }
 
 const handleWordClick = (wordId: number) => {
@@ -192,7 +204,7 @@ const handleDeleteScript = (id: string) => {
         <button
           class="header-button"
           title="Manage scripts"
-          @click="showEditor = true"
+          @click="handleOpenScriptsList"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -306,11 +318,12 @@ const handleDeleteScript = (id: string) => {
         <ScriptEditor
           :scripts="scripts"
           :current-script="currentScript"
+          :edit-current="editCurrentScript"
           @create="handleCreateScript"
           @select="handleSelectScript"
           @update="handleUpdateScript"
           @delete="handleDeleteScript"
-          @close="showEditor = false"
+          @close="handleCloseEditor"
         />
       </div>
     </Transition>

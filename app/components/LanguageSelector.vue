@@ -64,9 +64,9 @@ const filteredLanguages = computed(() => {
   )
 })
 
-// Reset highlighted index when filtered results change
-watch(filteredLanguages, () => {
-  highlightedIndex.value = -1
+// Highlight first result when filtered results change
+watch(filteredLanguages, (newFiltered) => {
+  highlightedIndex.value = newFiltered.length > 0 ? 0 : -1
 })
 
 const openDropdown = () => {

@@ -4,6 +4,7 @@ import type { Script } from '~/composables/useScriptManager'
 const props = defineProps<{
   scripts: readonly Script[]
   currentScript: Script | null
+  editCurrent?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -49,10 +50,20 @@ const save = () => {
     })
   }
 
+  // If opened directly to edit current script, close the editor entirely
+  if (props.editCurrent) {
+    emit('close')
+    return
+  }
   mode.value = 'list'
 }
 
 const cancel = () => {
+  // If opened directly to edit current script, close the editor entirely
+  if (props.editCurrent) {
+    emit('close')
+    return
+  }
   mode.value = 'list'
   editingScript.value = null
   title.value = ''
@@ -73,6 +84,13 @@ const formatDate = (timestamp: number) => {
     minute: '2-digit'
   }).format(new Date(timestamp))
 }
+
+// If editCurrent is true and there's a current script, open it for editing
+onMounted(() => {
+  if (props.editCurrent && props.currentScript) {
+    openEdit(props.currentScript)
+  }
+})
 </script>
 
 <template>
