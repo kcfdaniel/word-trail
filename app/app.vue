@@ -34,7 +34,7 @@ useSeoMeta({
   ogUrl: 'https://wordtrail.web.dev',
   twitterTitle: 'WordTrail',
   twitterDescription: 'Highlight and track your script reading progress in real-time with speech recognition.',
-  twitterImage: 'pwa-512x512.png'
+  twitterImage: '/pwa-512x512.png'
 })
 </script>
 
