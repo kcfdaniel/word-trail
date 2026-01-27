@@ -199,6 +199,19 @@ export const useScriptManager = () => {
     loadScripts()
   })
 
+  const getScriptById = (id: string): Script | null => {
+    return scripts.value.find(s => s.id === id) ?? null
+  }
+
+  const loadScriptById = (id: string): boolean => {
+    const script = getScriptById(id)
+    if (script) {
+      setCurrentScript(script)
+      return true
+    }
+    return false
+  }
+
   return {
     scripts: readonly(scripts),
     currentScript: readonly(currentScript),
@@ -210,6 +223,8 @@ export const useScriptManager = () => {
     // Functions
     loadScripts,
     setCurrentScript,
+    getScriptById,
+    loadScriptById,
     createScript,
     updateScript,
     deleteScript,

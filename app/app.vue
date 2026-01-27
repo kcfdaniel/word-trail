@@ -50,5 +50,7 @@ useSeoMeta({
 .wordtrail-app {
   min-height: 100dvh;
   background: var(--surface);
+  overflow: hidden;
+  position: relative;
 }
 </style>

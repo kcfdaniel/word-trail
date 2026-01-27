@@ -31,57 +31,7 @@ const emit = defineEmits<{
 
     <!-- Script Display -->
     <div class="script-container">
-      <div
-        v-if="words.length === 0"
-        class="empty-state"
-      >
-        <div class="empty-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="48"
-            height="48"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line
-              x1="16"
-              y1="13"
-              x2="8"
-              y2="13"
-            />
-            <line
-              x1="16"
-              y1="17"
-              x2="8"
-              y2="17"
-            />
-            <polyline points="10 9 9 9 8 9" />
-          </svg>
-        </div>
-        <p class="empty-title">
-          No script loaded
-        </p>
-        <p class="empty-subtitle">
-          Create or select a script to begin
-        </p>
-        <button
-          class="empty-button"
-          @click="emit('edit')"
-        >
-          Add Script
-        </button>
-      </div>
-
-      <div
-        v-else
-        class="script-text"
-      >
+      <div class="script-text">
         <WordDisplay
           v-for="word in words"
           :key="word.id"
@@ -93,10 +43,7 @@ const emit = defineEmits<{
     </div>
 
     <!-- Controls -->
-    <div
-      v-if="words.length > 0"
-      class="controls"
-    >
+    <div class="controls">
       <button
         class="control-button control-button--secondary"
         title="Reset progress"
@@ -260,55 +207,6 @@ const emit = defineEmits<{
   word-spacing: 0.15em;
   word-wrap: break-word;
   overflow-wrap: break-word;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  min-height: 300px;
-  text-align: center;
-  padding: 2rem;
-}
-
-.empty-icon {
-  color: var(--text-tertiary);
-  margin-bottom: 1.5rem;
-  opacity: 0.5;
-}
-
-.empty-title {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0 0 0.5rem;
-}
-
-.empty-subtitle {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  margin: 0 0 1.5rem;
-}
-
-.empty-button {
-  padding: 0.75rem 1.5rem;
-  background: var(--accent);
-  color: var(--accent-text);
-  border: none;
-  border-radius: 0.5rem;
-  font-family: var(--font-ui);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.empty-button:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
 }
 
 .controls {

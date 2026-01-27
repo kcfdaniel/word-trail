@@ -4,18 +4,19 @@ import type { Script } from '~/composables/useScriptManager'
 const {
   scripts,
   currentScript,
-  setCurrentScript,
   createScript,
   updateScript,
   deleteScript
 } = useScriptManager()
 
-const router = useRouter()
 const searchQuery = ref('')
 const mode = ref<'list' | 'edit' | 'new'>('list')
 const editingScript = ref<Script | null>(null)
 const title = ref('')
 const content = ref('')
+
+// Script reader overlay state
+const selectedScript = ref<Script | null>(null)
 
 const wordCount = computed(() => {
   return content.value.split(/\s+/).filter(w => w.trim().length > 0).length
@@ -82,8 +83,11 @@ const confirmDelete = (script: Script) => {
 }
 
 const selectAndNavigate = (script: Script) => {
-  setCurrentScript(script)
-  router.push('/')
+  selectedScript.value = script
+}
+
+const closeReader = () => {
+  selectedScript.value = null
 }
 
 const formatDate = (timestamp: number) => {
@@ -101,36 +105,23 @@ const formatDate = (timestamp: number) => {
     <!-- Header -->
     <header class="page-header">
       <div class="header-left">
-        <button
-          class="back-button"
-          title="Back to reader"
-          @click="router.push('/')"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-        </button>
-        <h1 class="page-title">
-          {{ mode === 'list' ? 'Scripts' : mode === 'new' ? 'New Script' : 'Edit Script' }}
-        </h1>
+        <img
+          src="/app-logo.png"
+          alt="WordTrail"
+          class="app-logo"
+        />
       </div>
     </header>
 
+    <!-- Page Title -->
+    <div class="page-title-section">
+      <h1 class="page-title">
+        Scripts
+      </h1>
+    </div>
+
     <!-- List View -->
-    <div
-      v-if="mode === 'list'"
-      class="page-content"
-    >
+    <div class="page-content">
       <!-- Search and New Button -->
       <div class="toolbar">
         <div class="search-box">
@@ -263,61 +254,111 @@ const formatDate = (timestamp: number) => {
       </div>
     </div>
 
-    <!-- Edit/New View -->
-    <div
-      v-else
-      class="page-content editor-form"
-    >
-      <div class="form-group">
-        <label
-          for="script-title"
-          class="form-label"
-        >Title</label>
-        <input
-          id="script-title"
-          v-model="title"
-          type="text"
-          class="form-input"
-          placeholder="Enter script title..."
-        >
-      </div>
+    <!-- Edit/New Overlay -->
+    <Transition name="slide-up">
+      <div
+        v-if="mode !== 'list'"
+        class="editor-overlay"
+      >
+        <div class="editor-header">
+          <h2 class="editor-title">
+            {{ mode === 'new' ? 'New Script' : 'Edit Script' }}
+          </h2>
+          <button
+            class="close-button"
+            aria-label="Close"
+            @click="cancel"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
 
-      <div class="form-group form-group--grow">
-        <label
-          for="script-content"
-          class="form-label"
-        >
-          Script Content
-          <span class="word-count">{{ wordCount }} words</span>
-        </label>
-        <textarea
-          id="script-content"
-          v-model="content"
-          class="form-textarea"
-          placeholder="Paste or type your script here..."
-        />
-      </div>
+        <div class="editor-content">
+          <div class="form-group">
+            <label
+              for="script-title"
+              class="form-label"
+            >Title</label>
+            <input
+              id="script-title"
+              v-model="title"
+              type="text"
+              class="form-input"
+              placeholder="Enter script title..."
+            >
+          </div>
 
-      <div class="form-actions">
-        <button
-          class="form-button form-button--secondary"
-          @click="cancel"
-        >
-          Cancel
-        </button>
-        <button
-          class="form-button form-button--primary"
-          :disabled="!content.trim()"
-          @click="save"
-        >
-          {{ mode === 'new' ? 'Create Script' : 'Save Changes' }}
-        </button>
+          <div class="form-group form-group--grow">
+            <label
+              for="script-content"
+              class="form-label"
+            >
+              Script Content
+              <span class="word-count">{{ wordCount }} words</span>
+            </label>
+            <textarea
+              id="script-content"
+              v-model="content"
+              class="form-textarea"
+              placeholder="Paste or type your script here..."
+            />
+          </div>
+
+          <div class="form-actions">
+            <button
+              class="form-button form-button--secondary"
+              @click="cancel"
+            >
+              Cancel
+            </button>
+            <button
+              class="form-button form-button--primary"
+              :disabled="!content.trim()"
+              @click="save"
+            >
+              {{ mode === 'new' ? 'Create Script' : 'Save Changes' }}
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </Transition>
+
+    <!-- Script Reader Overlay -->
+    <Transition name="slide-right">
+      <ScriptReaderOverlay
+        v-if="selectedScript"
+        :script="selectedScript"
+        @close="closeReader"
+      />
+    </Transition>
   </div>
 </template>
 
 <style scoped>
+/* Slide right transition for reader overlay */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-right-enter-from,
+.slide-right-leave-to {
+  transform: translateX(100%);
+}
+
 .scripts-page {
   display: flex;
   flex-direction: column;
@@ -342,7 +383,18 @@ const formatDate = (timestamp: number) => {
   gap: 0.75rem;
 }
 
-.back-button {
+.app-logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+.header-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.header-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -356,23 +408,28 @@ const formatDate = (timestamp: number) => {
   transition: all 0.2s ease;
 }
 
-.back-button:hover {
+.header-button:hover {
   background: var(--button-secondary-bg);
   color: var(--text-primary);
 }
 
+.page-title-section {
+  padding: 1.5rem 1.5rem 0;
+}
+
 .page-title {
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-size: 1.75rem;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .page-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1rem 1.5rem 1.5rem;
 }
 
 .toolbar {
@@ -668,5 +725,71 @@ const formatDate = (timestamp: number) => {
   .new-button {
     justify-content: center;
   }
+}
+
+/* Editor Overlay */
+.editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-elevated);
+}
+
+.editor-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
+  border-radius: 0.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: var(--button-secondary-bg);
+  color: var(--text-primary);
+}
+
+.editor-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* Slide up transition */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(100%);
 }
 </style>
