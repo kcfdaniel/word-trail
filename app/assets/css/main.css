@@ -1,18 +1,207 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-@theme static {
-  --font-sans: 'Public Sans', sans-serif;
+/*
+ * WordTrail Design System
+ * Aesthetic: "Luminous Parchment" - Warm, literary, focused
+ *
+ * A teleprompter meets meditation app aesthetic with
+ * warm paper-like backgrounds and golden amber highlights
+ */
 
-  --color-green-50: #EFFDF5;
-  --color-green-100: #D9FBE8;
-  --color-green-200: #B3F5D1;
-  --color-green-300: #75EDAE;
-  --color-green-400: #00DC82;
-  --color-green-500: #00C16A;
-  --color-green-600: #00A155;
-  --color-green-700: #007F45;
-  --color-green-800: #016538;
-  --color-green-900: #0A5331;
-  --color-green-950: #052E16;
+:root {
+  /* Typography */
+  --font-display: 'DM Sans', system-ui, sans-serif;
+  --font-ui: 'DM Sans', system-ui, sans-serif;
+  --font-script: 'Cormorant Garamond', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Light Theme (Warm Parchment) */
+  --surface: #faf8f5;
+  --surface-elevated: #ffffff;
+  --surface-muted: #f5f2ed;
+  --header-bg: rgba(250, 248, 245, 0.92);
+
+  --text-primary: #1a1815;
+  --text-secondary: #5c564d;
+  --text-tertiary: #8a8279;
+
+  --border-subtle: rgba(26, 24, 21, 0.08);
+  --border-hover: rgba(26, 24, 21, 0.15);
+
+  /* Word States */
+  --word-pending: #3d3833;
+  --word-completed: #a39e94;
+  --word-active-text: #1a1815;
+  --word-active-bg: rgba(255, 183, 77, 0.25);
+  --word-active-glow: rgba(255, 183, 77, 0.4);
+  --word-active-glow-outer: rgba(255, 183, 77, 0.15);
+
+  /* Accent (Warm Amber) */
+  --accent: #d97706;
+  --accent-hover: #b45309;
+  --accent-text: #ffffff;
+  --accent-subtle: rgba(217, 119, 6, 0.1);
+  --accent-ring: rgba(217, 119, 6, 0.2);
+  --accent-shadow: rgba(217, 119, 6, 0.25);
+
+  /* Danger */
+  --danger: #dc2626;
+  --danger-subtle: rgba(220, 38, 38, 0.1);
+  --danger-shadow: rgba(220, 38, 38, 0.25);
+  --danger-ring: rgba(220, 38, 38, 0.15);
+
+  /* Buttons */
+  --button-secondary-bg: rgba(26, 24, 21, 0.06);
+  --button-secondary-hover: rgba(26, 24, 21, 0.1);
+  --button-secondary-text: #3d3833;
+
+  /* Progress */
+  --progress-bg: rgba(26, 24, 21, 0.08);
+  --progress-fill: linear-gradient(90deg, #d97706, #f59e0b);
+
+  /* Input */
+  --input-bg: #ffffff;
+
+  /* Tags */
+  --tag-bg: rgba(26, 24, 21, 0.05);
+
+  /* Shadows */
+  --shadow-color: rgba(26, 24, 21, 0.08);
+}
+
+/* Dark Theme (Deep Ink) */
+.dark, [data-theme="dark"] {
+  --surface: #0f0e0d;
+  --surface-elevated: #1a1917;
+  --surface-muted: #141312;
+  --header-bg: rgba(15, 14, 13, 0.92);
+
+  --text-primary: #f5f2ed;
+  --text-secondary: #a39e94;
+  --text-tertiary: #6b665c;
+
+  --border-subtle: rgba(245, 242, 237, 0.08);
+  --border-hover: rgba(245, 242, 237, 0.15);
+
+  /* Word States - Dark */
+  --word-pending: #d4cfc4;
+  --word-completed: #5c564d;
+  --word-active-text: #fef9f0;
+  --word-active-bg: rgba(251, 191, 36, 0.2);
+  --word-active-glow: rgba(251, 191, 36, 0.35);
+  --word-active-glow-outer: rgba(251, 191, 36, 0.12);
+
+  /* Accent - Dark (Brighter Amber) */
+  --accent: #f59e0b;
+  --accent-hover: #fbbf24;
+  --accent-text: #0f0e0d;
+  --accent-subtle: rgba(245, 158, 11, 0.12);
+  --accent-ring: rgba(245, 158, 11, 0.25);
+  --accent-shadow: rgba(245, 158, 11, 0.3);
+
+  /* Danger - Dark */
+  --danger: #f87171;
+  --danger-subtle: rgba(248, 113, 113, 0.12);
+  --danger-shadow: rgba(248, 113, 113, 0.3);
+  --danger-ring: rgba(248, 113, 113, 0.15);
+
+  /* Buttons - Dark */
+  --button-secondary-bg: rgba(245, 242, 237, 0.08);
+  --button-secondary-hover: rgba(245, 242, 237, 0.12);
+  --button-secondary-text: #d4cfc4;
+
+  /* Progress - Dark */
+  --progress-bg: rgba(245, 242, 237, 0.08);
+  --progress-fill: linear-gradient(90deg, #f59e0b, #fbbf24);
+
+  /* Input - Dark */
+  --input-bg: #1a1917;
+
+  /* Tags - Dark */
+  --tag-bg: rgba(245, 242, 237, 0.06);
+
+  /* Shadows - Dark */
+  --shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Base Styles */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-subtle);
+  color: var(--text-primary);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+/* Focus States */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Subtle Background Texture */
+.wordtrail-app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.015;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dark .wordtrail-app::before {
+  opacity: 0.025;
+}
+
+/* Progress Fill Gradient */
+.progress-fill {
+  background: var(--progress-fill) !important;
+}
+
+/* Nuxt UI Overrides */
+@theme static {
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+
+  --color-primary-50: #fffbeb;
+  --color-primary-100: #fef3c7;
+  --color-primary-200: #fde68a;
+  --color-primary-300: #fcd34d;
+  --color-primary-400: #fbbf24;
+  --color-primary-500: #f59e0b;
+  --color-primary-600: #d97706;
+  --color-primary-700: #b45309;
+  --color-primary-800: #92400e;
+  --color-primary-900: #78350f;
+  --color-primary-950: #451a03;
 }

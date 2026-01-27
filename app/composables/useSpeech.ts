@@ -88,12 +88,18 @@ export const useSpeech = () => {
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
+        if (!result) continue
+
+        const alternative = result[0]
+        if (!alternative) continue
+
+        console.log({ alternative })
+
         if (result.isFinal) {
-          final += result[0].transcript
-          confidence.value = result[0].confidence
-        }
-        else {
-          interim += result[0].transcript
+          final += alternative.transcript
+          confidence.value = alternative.confidence
+        } else {
+          interim += alternative.transcript
         }
       }
 
@@ -138,8 +144,7 @@ export const useSpeech = () => {
 
     try {
       recognition.start()
-    }
-    catch (e) {
+    } catch (e) {
       if ((e as Error).message?.includes('already started')) {
         return
       }
@@ -158,8 +163,7 @@ export const useSpeech = () => {
   const toggle = () => {
     if (isListening.value) {
       stop()
-    }
-    else {
+    } else {
       start()
     }
   }
@@ -199,6 +203,6 @@ export const useSpeech = () => {
     stop,
     toggle,
     reset,
-    setLanguage,
+    setLanguage
   }
 }
