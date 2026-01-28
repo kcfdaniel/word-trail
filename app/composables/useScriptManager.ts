@@ -57,17 +57,26 @@ export const useScriptManager = () => {
 
   const parseContent = (content: string): ScriptWord[] => {
     const CJK_RANGE = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/
+    // Chinese/CJK punctuation ranges
+    const CJK_PUNCTUATION = /[\u3000-\u303f\uff00-\uffef\u2000-\u206f]/
     const results: string[] = []
     let currentWord = ''
 
-    for (const char of content) {
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i]!
       if (CJK_RANGE.test(char)) {
-        // CJK character - flush current word, add CJK char as its own word
+        // CJK character - flush current word, start new CJK word
         if (currentWord.trim()) {
           results.push(currentWord.trim())
           currentWord = ''
         }
-        results.push(char)
+        // Start with CJK char, then collect any trailing CJK punctuation
+        let cjkWord = char
+        while (i + 1 < content.length && CJK_PUNCTUATION.test(content[i + 1]!)) {
+          i++
+          cjkWord += content[i]
+        }
+        results.push(cjkWord)
       } else if (/\s/.test(char)) {
         // Whitespace - flush current word
         if (currentWord.trim()) {
