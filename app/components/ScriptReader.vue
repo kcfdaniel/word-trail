@@ -6,6 +6,7 @@ defineProps<{
   activeIndex: number
   progress: number
   isListening: boolean
+  showDebug?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -14,6 +15,16 @@ const emit = defineEmits<{
   'edit': []
   'word-click': [wordId: number]
 }>()
+
+const scriptContainer = ref<HTMLElement | null>(null)
+
+const handleReset = () => {
+  // Scroll to top
+  if (scriptContainer.value) {
+    scriptContainer.value.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  emit('reset')
+}
 </script>
 
 <template>
@@ -30,13 +41,14 @@ const emit = defineEmits<{
     </div>
 
     <!-- Script Display -->
-    <div class="script-container">
+    <div ref="scriptContainer" class="script-container">
       <div class="script-text">
         <WordDisplay
           v-for="word in words"
           :key="word.id"
           :word="word"
           :is-active="word.id === activeIndex"
+          :show-debug="showDebug"
           @click="emit('word-click', $event)"
         />
       </div>
@@ -47,7 +59,7 @@ const emit = defineEmits<{
       <button
         class="control-button control-button--secondary"
         title="Reset progress"
-        @click="emit('reset')"
+        @click="handleReset"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

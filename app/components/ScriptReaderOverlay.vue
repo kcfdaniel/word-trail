@@ -216,6 +216,7 @@ const goBack = () => {
           :active-index="activeWordIndex"
           :progress="getProgress"
           :is-listening="isListening"
+          :show-debug="showDebugPanel"
           @toggle-listening="handleToggleListening"
           @reset="handleReset"
           @edit="handleEdit"

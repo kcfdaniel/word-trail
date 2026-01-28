@@ -60,6 +60,28 @@ export const useSpeech = () => {
   let recognition: SpeechRecognition | null = null
   let shouldRestart = false
 
+  // Silence detection - reset transcript after 2 seconds of no speech
+  const SILENCE_RESET_DELAY = 2000
+  let silenceTimeout: ReturnType<typeof setTimeout> | null = null
+
+  const clearSilenceTimeout = () => {
+    if (silenceTimeout) {
+      clearTimeout(silenceTimeout)
+      silenceTimeout = null
+    }
+  }
+
+  const startSilenceTimeout = () => {
+    clearSilenceTimeout()
+    silenceTimeout = setTimeout(() => {
+      // Only reset if still listening (user hasn't stopped)
+      if (isListening.value) {
+        transcript.value = ''
+        interimTranscript.value = ''
+      }
+    }, SILENCE_RESET_DELAY)
+  }
+
   const initRecognition = () => {
     if (!import.meta.client) return
 
@@ -93,7 +115,7 @@ export const useSpeech = () => {
         const alternative = result[0]
         if (!alternative) continue
 
-        console.log({ alternative })
+        // console.log({ alternative })
 
         if (result.isFinal) {
           final += alternative.transcript
@@ -107,6 +129,9 @@ export const useSpeech = () => {
         transcript.value = (transcript.value + ' ' + final).trim()
       }
       interimTranscript.value = interim
+
+      // Reset silence timer on any speech activity
+      startSilenceTimeout()
     }
 
     recognition.onerror = (event) => {
@@ -154,6 +179,7 @@ export const useSpeech = () => {
 
   const stop = () => {
     shouldRestart = false
+    clearSilenceTimeout()
     if (recognition) {
       recognition.stop()
     }
@@ -188,6 +214,7 @@ export const useSpeech = () => {
   })
 
   onUnmounted(() => {
+    clearSilenceTimeout()
     stop()
   })
 

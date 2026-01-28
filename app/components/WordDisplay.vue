@@ -4,6 +4,7 @@ import type { ScriptWord } from '~/composables/useScriptManager'
 const props = defineProps<{
   word: ScriptWord
   isActive: boolean
+  showDebug?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -44,6 +45,7 @@ const handleClick = () => {
     class="word"
     :class="stateClass"
     :data-word-id="word.id"
+    :title="showDebug ? `Index: ${word.id}` : undefined"
     role="button"
     tabindex="0"
     @click="handleClick"
