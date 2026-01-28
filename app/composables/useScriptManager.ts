@@ -56,15 +56,44 @@ export const useScriptManager = () => {
   }
 
   const parseContent = (content: string): ScriptWord[] => {
-    const words = content
-      .split(/\s+/)
-      .filter(w => w.trim().length > 0)
+    const CJK_RANGE = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/
+    const PUNCTUATION_ONLY = /^[\p{P}\p{S}]+$/u
+    const results: string[] = []
+    let currentWord = ''
 
-    return words.map((text, index) => ({
-      id: index,
-      text,
-      state: 'pending' as const
-    }))
+    for (const char of content) {
+      if (CJK_RANGE.test(char)) {
+        // CJK character - flush current word, add CJK char as its own word
+        if (currentWord.trim()) {
+          results.push(currentWord.trim())
+          currentWord = ''
+        }
+        results.push(char)
+      } else if (/\s/.test(char)) {
+        // Whitespace - flush current word
+        if (currentWord.trim()) {
+          results.push(currentWord.trim())
+          currentWord = ''
+        }
+      } else {
+        // Other characters (Latin, punctuation) - accumulate
+        currentWord += char
+      }
+    }
+
+    // Flush remaining
+    if (currentWord.trim()) {
+      results.push(currentWord.trim())
+    }
+
+    // Filter out punctuation-only segments
+    return results
+      .filter(text => !PUNCTUATION_ONLY.test(text))
+      .map((text, index) => ({
+        id: index,
+        text,
+        state: 'pending' as const
+      }))
   }
 
   const setCurrentScript = (script: Script | null) => {
