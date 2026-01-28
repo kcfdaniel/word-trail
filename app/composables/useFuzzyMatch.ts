@@ -16,6 +16,43 @@ const normalizeWord = (word: string): string => {
 }
 
 /**
+ * Split text into words, handling both CJK and Latin scripts
+ * CJK characters are split individually, Latin words by whitespace
+ */
+const splitWords = (text: string): string[] => {
+  const CJK_RANGE = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/
+  const results: string[] = []
+  let currentWord = ''
+
+  for (const char of text) {
+    if (CJK_RANGE.test(char)) {
+      // CJK character - flush current word, add CJK char as its own word
+      if (currentWord.trim()) {
+        results.push(currentWord.trim())
+        currentWord = ''
+      }
+      results.push(char)
+    } else if (/\s/.test(char)) {
+      // Whitespace - flush current word
+      if (currentWord.trim()) {
+        results.push(currentWord.trim())
+        currentWord = ''
+      }
+    } else {
+      // Other characters (Latin, punctuation) - accumulate
+      currentWord += char
+    }
+  }
+
+  // Flush remaining
+  if (currentWord.trim()) {
+    results.push(currentWord.trim())
+  }
+
+  return results
+}
+
+/**
  * Check if two words are similar enough to be considered a match
  * Uses prefix matching and character overlap
  */
@@ -198,6 +235,7 @@ export const useFuzzyMatch = () => {
     findBestMatch,
     wordsSimilar,
     wordsExactMatch,
-    normalizeWord
+    normalizeWord,
+    splitWords
   }
 }

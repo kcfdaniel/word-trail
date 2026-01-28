@@ -63,7 +63,7 @@ watch(() => props.script, (newScript) => {
   setCurrentScript(newScript)
 })
 
-const { findBestMatch } = useFuzzyMatch()
+const { findBestMatch, splitWords } = useFuzzyMatch()
 const { isDebugEnabled, showDebugPanel, toggleDebugPanel } = useDebugMode()
 
 const showEditor = ref(false)
@@ -71,9 +71,9 @@ const lastMatch = ref<MatchResult | null>(null)
 
 // Combine final transcript + interim for full spoken words
 const allSpokenWords = computed(() => {
-  const finalWords = transcript.value.split(/\s+/).filter(w => w.trim())
+  const finalWords = splitWords(transcript.value)
   const interimWords = interimTranscript.value.trim()
-    ? interimTranscript.value.split(/\s+/).filter(w => w.trim())
+    ? splitWords(interimTranscript.value)
     : []
   return [...finalWords, ...interimWords]
 })

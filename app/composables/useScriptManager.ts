@@ -57,7 +57,6 @@ export const useScriptManager = () => {
 
   const parseContent = (content: string): ScriptWord[] => {
     const CJK_RANGE = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/
-    const PUNCTUATION_ONLY = /^[\p{P}\p{S}]+$/u
     const results: string[] = []
     let currentWord = ''
 
@@ -86,14 +85,12 @@ export const useScriptManager = () => {
       results.push(currentWord.trim())
     }
 
-    // Filter out punctuation-only segments
-    return results
-      .filter(text => !PUNCTUATION_ONLY.test(text))
-      .map((text, index) => ({
-        id: index,
-        text,
-        state: 'pending' as const
-      }))
+    // Keep all segments including punctuation for display
+    return results.map((text, index) => ({
+      id: index,
+      text,
+      state: 'pending' as const
+    }))
   }
 
   const setCurrentScript = (script: Script | null) => {
