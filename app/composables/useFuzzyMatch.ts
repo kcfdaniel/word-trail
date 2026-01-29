@@ -355,16 +355,12 @@ export const useFuzzyMatch = () => {
 
     // If phrase matching found a result, return it
     if (best) {
-      console.log("MATCHING FOUND");
-      console.log({best});
       const matchedWord = scriptWords.find(w => w.id === best.endId)?.text ?? ''
       return {
         index: best.endId,
         word: matchedWord
       }
     }
-
-    console.log("DP");
 
     // === FALLBACK: DP alignment for recovery ===
     // Use when phrase matching fails (ASR errors, missing words, etc.)
