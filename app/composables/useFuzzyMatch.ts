@@ -22,6 +22,40 @@ interface PrecomputedScript {
   words: PrecomputedWord[]
   significant: SignificantWord[]
   idToArrayIdx: Map<number, number>  // word.id → index in words array
+  sortedIds: number[]  // sorted array of word IDs for binary search
+}
+
+/**
+ * Binary search: find last index where arr[i].key <= target, or -1 if none
+ */
+const binarySearchLastLE = <T>(arr: T[], target: number, key: (item: T) => number): number => {
+  let lo = 0, hi = arr.length - 1, result = -1
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1
+    if (key(arr[mid]!) <= target) {
+      result = mid
+      lo = mid + 1
+    } else {
+      hi = mid - 1
+    }
+  }
+  return result
+}
+
+/**
+ * Binary search: find first index where arr[i] >= target, or arr.length if none
+ */
+const binarySearchFirstGE = (arr: number[], target: number): number => {
+  let lo = 0, hi = arr.length
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1
+    if (arr[mid]! >= target) {
+      hi = mid
+    } else {
+      lo = mid + 1
+    }
+  }
+  return lo
 }
 
 /**
@@ -90,13 +124,6 @@ const isStopWordNormalized = (normalizedWord: string): boolean => {
 }
 
 /**
- * Check if a word is a stop word (normalizes first)
- */
-const isStopWord = (word: string): boolean => {
-  return isStopWordNormalized(normalizeWord(word))
-}
-
-/**
  * Check if two normalized words are similar enough to be considered a match
  */
 const wordsSimilarNormalized = (a: string, b: string): boolean => {
@@ -119,27 +146,6 @@ const wordsSimilarNormalized = (a: string, b: string): boolean => {
   }
 
   return matches / maxLen >= 0.75
-}
-
-/**
- * Check if two words are similar (normalizes both)
- */
-const wordsSimilar = (spoken: string, script: string): boolean => {
-  return wordsSimilarNormalized(normalizeWord(spoken), normalizeWord(script))
-}
-
-/**
- * Check if two words are exactly the same (after normalization)
- */
-const wordsExactMatch = (spoken: string, script: string): boolean => {
-  return normalizeWord(spoken) === normalizeWord(script)
-}
-
-/**
- * Check if two normalized words are exactly the same
- */
-const wordsExactMatchNormalized = (a: string, b: string): boolean => {
-  return a === b
 }
 
 /**
@@ -221,6 +227,71 @@ const alignSequencesDP = (
   return { lastMatchedArrayIdx, score: bestScore, matchCount }
 }
 
+interface MatchConfig {
+  windowBehind: number
+  maxJumpSingleWord: number
+  maxJumpSingleOriginal: number
+  maxForwardOriginal: number
+  minLenForLongJump: number
+}
+
+/**
+ * Find best phrase match in significant words array
+ */
+const findPhraseMatch = (
+  spokenSignificant: string[],
+  scriptSignificant: SignificantWord[],
+  searchStart: number,
+  searchEnd: number,
+  lastSigIdx: number,
+  expectedNextOriginal: number,
+  maxPhraseLen: number,
+  config: MatchConfig
+): { endId: number, length: number } | null => {
+  const phraseLenMax = Math.min(spokenSignificant.length, maxPhraseLen)
+  let best: { score: number, endId: number, length: number } | null = null
+
+  for (let len = phraseLenMax; len >= 1; len--) {
+    const phrase = spokenSignificant.slice(-len)
+
+    for (let i = searchStart; i <= searchEnd - len; i++) {
+      // Check if phrase matches at position i
+      let matches = true
+      for (let j = 0; j < len; j++) {
+        if (scriptSignificant[i + j]!.word !== phrase[j]) {
+          matches = false
+          break
+        }
+      }
+      if (!matches) continue
+
+      const startItem = scriptSignificant[i]!
+      const endItem = scriptSignificant[i + len - 1]!
+
+      const forwardSigDelta = i - (lastSigIdx + 1)
+      const forwardOrigDelta = startItem.originalId - expectedNextOriginal
+
+      // Guards
+      if (forwardSigDelta < -config.windowBehind) continue
+      if (len === 1 && (forwardSigDelta > config.maxJumpSingleWord || forwardOrigDelta > config.maxJumpSingleOriginal)) continue
+      if (forwardOrigDelta > config.maxForwardOriginal && len < config.minLenForLongJump) continue
+
+      // Score: prefer longer matches, then closer to expected position
+      const distance = Math.abs(forwardOrigDelta)
+      const score = len * 10 - distance - (i * 0.001)
+
+      if (!best || score > best.score) {
+        best = { score, endId: endItem.originalId, length: len }
+      }
+    }
+
+    // Early exit if we found a good multi-word match
+    if (best && best.length >= 2) break
+  }
+
+  return best
+}
+
 /**
  * Pre-compute script data for efficient matching
  * Call this once when script changes, not on every match attempt
@@ -229,6 +300,7 @@ const precomputeScript = (scriptWords: { id: number, text: string }[]): Precompu
   const words: PrecomputedWord[] = []
   const significant: SignificantWord[] = []
   const idToArrayIdx = new Map<number, number>()
+  const sortedIds: number[] = []
 
   scriptWords.forEach((sw, idx) => {
     const normalized = normalizeWord(sw.text)
@@ -239,6 +311,7 @@ const precomputeScript = (scriptWords: { id: number, text: string }[]): Precompu
     }
     words.push(word)
     idToArrayIdx.set(sw.id, idx)
+    sortedIds.push(sw.id)
 
     if (!isStopWordNormalized(normalized)) {
       significant.push({
@@ -249,7 +322,7 @@ const precomputeScript = (scriptWords: { id: number, text: string }[]): Precompu
     }
   })
 
-  return { words, significant, idToArrayIdx }
+  return { words, significant, idToArrayIdx, sortedIds }
 }
 
 export const useFuzzyMatch = () => {
@@ -291,7 +364,7 @@ export const useFuzzyMatch = () => {
 
       // Rule 1: Single word - only match if it exactly equals the next expected word
       if (spokenWords.length === 1) {
-        if (nextWord && wordsExactMatchNormalized(spokenNormalized[0]!, nextWord.normalized)) {
+        if (nextWord && spokenNormalized[0] === nextWord.normalized) {
           return { index: nextExpectedIndex, word: nextWord.text }
         }
         return null
@@ -299,14 +372,14 @@ export const useFuzzyMatch = () => {
 
       // Rule 2: Two words - require exact match for stability
       if (spokenWords.length === 2) {
-        if (nextWord && wordsExactMatchNormalized(spokenNormalized[1]!, nextWord.normalized)) {
+        if (nextWord && spokenNormalized[1] === nextWord.normalized) {
           return { index: nextExpectedIndex, word: nextWord.text }
         }
         const wordAfterNextIdx = precomputed.idToArrayIdx.get(nextExpectedIndex + 1)
         const wordAfterNext = wordAfterNextIdx !== undefined ? precomputed.words[wordAfterNextIdx] : undefined
         if (nextWord && wordAfterNext) {
-          if (wordsExactMatchNormalized(spokenNormalized[0]!, nextWord.normalized) &&
-            wordsExactMatchNormalized(spokenNormalized[1]!, wordAfterNext.normalized)) {
+          if (spokenNormalized[0] === nextWord.normalized &&
+            spokenNormalized[1] === wordAfterNext.normalized) {
             return { index: nextExpectedIndex + 1, word: wordAfterNext.text }
           }
         }
@@ -322,7 +395,7 @@ export const useFuzzyMatch = () => {
       const spokenSignificant = limitedSpokenNormalized.filter(w => !isStopWordNormalized(w))
       if (spokenSignificant.length === 0) {
         // All stop words - try exact match on last word
-        if (nextWord && wordsExactMatchNormalized(limitedSpokenNormalized[limitedSpokenNormalized.length - 1]!, nextWord.normalized)) {
+        if (nextWord && limitedSpokenNormalized[limitedSpokenNormalized.length - 1] === nextWord.normalized) {
           return { index: nextExpectedIndex, word: nextWord.text }
         }
         return null
@@ -333,16 +406,10 @@ export const useFuzzyMatch = () => {
 
       if (allScriptSignificant.length === 0) return null
 
-      // Find the last matched significant word index
-      let lastSigIdx = -1
-      if (currentIndex >= 0) {
-        for (let i = allScriptSignificant.length - 1; i >= 0; i--) {
-          if (allScriptSignificant[i]!.originalId <= currentIndex) {
-            lastSigIdx = i
-            break
-          }
-        }
-      }
+      // Find the last matched significant word index using binary search
+      const lastSigIdx = currentIndex >= 0
+        ? binarySearchLastLE(allScriptSignificant, currentIndex, w => w.originalId)
+        : -1
 
       // Calculate expected next position in original word space
       const lastOriginal = lastSigIdx >= 0 ? allScriptSignificant[lastSigIdx]!.originalId : -1
@@ -353,58 +420,24 @@ export const useFuzzyMatch = () => {
       const searchEndSig = Math.min(allScriptSignificant.length, lastSigIdx + 1 + WINDOW_AHEAD)
 
       // === PRIMARY: Phrase-based matching on significant words ===
-      const phraseLenMax = Math.min(spokenSignificant.length, MAX_PHRASE_LEN)
-      let best: { score: number, endId: number, length: number } | null = null
-
-      for (let len = phraseLenMax; len >= 1; len--) {
-        // Take last `len` significant words from spoken (already normalized)
-        const phrase = spokenSignificant.slice(-len)
-
-        // Search within bounded range
-        for (let i = searchStartSig; i <= searchEndSig - len; i++) {
-          // Check if phrase matches at position i
-          let matches = true
-          for (let j = 0; j < len; j++) {
-            if (allScriptSignificant[i + j]!.word !== phrase[j]) {
-              matches = false
-              break
-            }
-          }
-
-          if (!matches) continue
-
-          const startItem = allScriptSignificant[i]!
-          const endItem = allScriptSignificant[i + len - 1]!
-
-          // Calculate deltas
-          const forwardSigDelta = i - (lastSigIdx + 1)
-          const forwardOrigDelta = startItem.originalId - expectedNextOriginal
-
-          // Guard: prevent large backwards jumps
-          if (forwardSigDelta < -WINDOW_BEHIND) continue
-
-          // Guard: single-word matches can't jump too far
-          if (len === 1 && (forwardSigDelta > MAX_JUMP_SINGLE_WORD || forwardOrigDelta > MAX_JUMP_SINGLE_ORIGINAL)) continue
-
-          // Guard: require longer phrase for big jumps
-          if (forwardOrigDelta > MAX_FORWARD_ORIGINAL && len < MIN_LEN_FOR_LONG_JUMP) continue
-
-          // Score: prefer longer matches, then closer to expected position
-          const distance = Math.abs(forwardOrigDelta)
-          const score = len * 10 - distance - (i * 0.001)
-
-          if (!best || score > best.score) {
-            best = {
-              score,
-              endId: endItem.originalId,
-              length: len
-            }
-          }
-        }
-
-        // Early exit if we found a good multi-word match
-        if (best && best.length >= 2) break
+      const matchConfig: MatchConfig = {
+        windowBehind: WINDOW_BEHIND,
+        maxJumpSingleWord: MAX_JUMP_SINGLE_WORD,
+        maxJumpSingleOriginal: MAX_JUMP_SINGLE_ORIGINAL,
+        maxForwardOriginal: MAX_FORWARD_ORIGINAL,
+        minLenForLongJump: MIN_LEN_FOR_LONG_JUMP
       }
+
+      const best = findPhraseMatch(
+        spokenSignificant,
+        allScriptSignificant,
+        searchStartSig,
+        searchEndSig,
+        lastSigIdx,
+        expectedNextOriginal,
+        MAX_PHRASE_LEN,
+        matchConfig
+      )
 
       // If phrase matching found a result, return it
       if (best) {
@@ -420,22 +453,9 @@ export const useFuzzyMatch = () => {
       const windowStartIdx = Math.max(0, currentIndex - WINDOW_BEHIND + 1)
       const windowEndIdx = Math.min(precomputed.words.length, currentIndex + MAX_FORWARD_ORIGINAL + 1)
 
-      // Find array indices for window bounds (O(1) would require sorted search, but window is small)
-      let startArrayIdx = 0
-      for (let i = 0; i < precomputed.words.length; i++) {
-        if (precomputed.words[i]!.id >= windowStartIdx) {
-          startArrayIdx = i
-          break
-        }
-      }
-
-      let endArrayIdx = precomputed.words.length
-      for (let i = startArrayIdx; i < precomputed.words.length; i++) {
-        if (precomputed.words[i]!.id >= windowEndIdx) {
-          endArrayIdx = i
-          break
-        }
-      }
+      // Use binary search to find window bounds in O(log n)
+      const startArrayIdx = binarySearchFirstGE(precomputed.sortedIds, windowStartIdx)
+      const endArrayIdx = binarySearchFirstGE(precomputed.sortedIds, windowEndIdx)
 
       const scriptWindow = precomputed.words.slice(startArrayIdx, endArrayIdx)
       if (scriptWindow.length === 0) return null
@@ -474,21 +494,8 @@ export const useFuzzyMatch = () => {
     return { findBestMatch }
   }
 
-  // Legacy API for backwards compatibility
-  const findBestMatch = (
-    spokenWords: string[],
-    scriptWords: { id: number, text: string }[],
-    currentIndex: number
-  ): MatchResult | null => {
-    const matcher = createMatcher(scriptWords)
-    return matcher.findBestMatch(spokenWords, currentIndex)
-  }
-
   return {
     createMatcher,
-    findBestMatch,
-    wordsSimilar,
-    wordsExactMatch,
     normalizeWord,
     splitWords
   }
