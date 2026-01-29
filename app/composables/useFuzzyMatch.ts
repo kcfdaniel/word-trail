@@ -21,8 +21,7 @@ interface SignificantWord {
 interface PrecomputedScript {
   words: PrecomputedWord[]
   significant: SignificantWord[]
-  idToArrayIdx: Map<number, number>  // word.id → index in words array
-  sortedIds: number[]  // sorted array of word IDs for binary search
+  // Note: word IDs are sequential 0..n, so ID === array index
 }
 
 /**
@@ -40,22 +39,6 @@ const binarySearchLastLE = <T>(arr: T[], target: number, key: (item: T) => numbe
     }
   }
   return result
-}
-
-/**
- * Binary search: find first index where arr[i] >= target, or arr.length if none
- */
-const binarySearchFirstGE = (arr: number[], target: number): number => {
-  let lo = 0, hi = arr.length
-  while (lo < hi) {
-    const mid = (lo + hi) >>> 1
-    if (arr[mid]! >= target) {
-      hi = mid
-    } else {
-      lo = mid + 1
-    }
-  }
-  return lo
 }
 
 /**
@@ -299,19 +282,14 @@ const findPhraseMatch = (
 const precomputeScript = (scriptWords: { id: number, text: string }[]): PrecomputedScript => {
   const words: PrecomputedWord[] = []
   const significant: SignificantWord[] = []
-  const idToArrayIdx = new Map<number, number>()
-  const sortedIds: number[] = []
 
   scriptWords.forEach((sw, idx) => {
     const normalized = normalizeWord(sw.text)
-    const word: PrecomputedWord = {
-      id: sw.id,
+    words.push({
+      id: sw.id,  // Note: id === idx for sequential IDs
       text: sw.text,
       normalized
-    }
-    words.push(word)
-    idToArrayIdx.set(sw.id, idx)
-    sortedIds.push(sw.id)
+    })
 
     if (!isStopWordNormalized(normalized)) {
       significant.push({
@@ -322,7 +300,7 @@ const precomputeScript = (scriptWords: { id: number, text: string }[]): Precompu
     }
   })
 
-  return { words, significant, idToArrayIdx, sortedIds }
+  return { words, significant }
 }
 
 export const useFuzzyMatch = () => {
@@ -358,14 +336,14 @@ export const useFuzzyMatch = () => {
       // Pre-normalize spoken words once for this call
       const spokenNormalized = spokenWords.map(w => normalizeWord(w))
 
-      const nextExpectedIndex = currentIndex + 1
-      const nextWordIdx = precomputed.idToArrayIdx.get(nextExpectedIndex)
-      const nextWord = nextWordIdx !== undefined ? precomputed.words[nextWordIdx] : undefined
+      // Since IDs are sequential 0..n, ID === array index
+      const nextIdx = currentIndex + 1
+      const nextWord = precomputed.words[nextIdx]
 
       // Rule 1: Single word - only match if it exactly equals the next expected word
       if (spokenWords.length === 1) {
         if (nextWord && spokenNormalized[0] === nextWord.normalized) {
-          return { index: nextExpectedIndex, word: nextWord.text }
+          return { index: nextIdx, word: nextWord.text }
         }
         return null
       }
@@ -373,14 +351,13 @@ export const useFuzzyMatch = () => {
       // Rule 2: Two words - require exact match for stability
       if (spokenWords.length === 2) {
         if (nextWord && spokenNormalized[1] === nextWord.normalized) {
-          return { index: nextExpectedIndex, word: nextWord.text }
+          return { index: nextIdx, word: nextWord.text }
         }
-        const wordAfterNextIdx = precomputed.idToArrayIdx.get(nextExpectedIndex + 1)
-        const wordAfterNext = wordAfterNextIdx !== undefined ? precomputed.words[wordAfterNextIdx] : undefined
+        const wordAfterNext = precomputed.words[nextIdx + 1]
         if (nextWord && wordAfterNext) {
           if (spokenNormalized[0] === nextWord.normalized &&
             spokenNormalized[1] === wordAfterNext.normalized) {
-            return { index: nextExpectedIndex + 1, word: wordAfterNext.text }
+            return { index: nextIdx + 1, word: wordAfterNext.text }
           }
         }
         return null
@@ -396,7 +373,7 @@ export const useFuzzyMatch = () => {
       if (spokenSignificant.length === 0) {
         // All stop words - try exact match on last word
         if (nextWord && limitedSpokenNormalized[limitedSpokenNormalized.length - 1] === nextWord.normalized) {
-          return { index: nextExpectedIndex, word: nextWord.text }
+          return { index: nextIdx, word: nextWord.text }
         }
         return null
       }
@@ -441,21 +418,17 @@ export const useFuzzyMatch = () => {
 
       // If phrase matching found a result, return it
       if (best) {
-        const matchedWordIdx = precomputed.idToArrayIdx.get(best.endId)
-        const matchedWord = matchedWordIdx !== undefined ? precomputed.words[matchedWordIdx]!.text : ''
+        const matchedWord = precomputed.words[best.endId]
         return {
           index: best.endId,
-          word: matchedWord
+          word: matchedWord?.text ?? ''
         }
       }
 
       // === FALLBACK: DP alignment for recovery ===
-      const windowStartIdx = Math.max(0, currentIndex - WINDOW_BEHIND + 1)
-      const windowEndIdx = Math.min(precomputed.words.length, currentIndex + MAX_FORWARD_ORIGINAL + 1)
-
-      // Use binary search to find window bounds in O(log n)
-      const startArrayIdx = binarySearchFirstGE(precomputed.sortedIds, windowStartIdx)
-      const endArrayIdx = binarySearchFirstGE(precomputed.sortedIds, windowEndIdx)
+      // Since IDs are sequential, ID === array index, so we can use direct bounds
+      const startArrayIdx = Math.max(0, currentIndex - WINDOW_BEHIND + 1)
+      const endArrayIdx = Math.min(precomputed.words.length, currentIndex + MAX_FORWARD_ORIGINAL + 1)
 
       const scriptWindow = precomputed.words.slice(startArrayIdx, endArrayIdx)
       if (scriptWindow.length === 0) return null
