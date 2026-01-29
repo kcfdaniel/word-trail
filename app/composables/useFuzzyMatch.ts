@@ -4,6 +4,27 @@ export interface MatchResult {
 }
 
 /**
+ * Pre-computed script data for O(1) lookups
+ */
+interface PrecomputedWord {
+  id: number
+  text: string
+  normalized: string
+}
+
+interface SignificantWord {
+  word: string      // already normalized
+  originalId: number
+  arrayIdx: number  // index in precomputed.words
+}
+
+interface PrecomputedScript {
+  words: PrecomputedWord[]
+  significant: SignificantWord[]
+  idToArrayIdx: Map<number, number>  // word.id → index in words array
+}
+
+/**
  * Normalize word for comparison
  * Removes punctuation, dashes, and converts to lowercase
  */
@@ -11,7 +32,7 @@ const normalizeWord = (word: string): string => {
   return word
     .toLowerCase()
     .replace(/[\u00AD\u2010-\u2015\u2212]/g, '') // soft hyphens, dashes
-    .replace(/[^\w\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/g, '') // keep letters, numbers, CJK
+    .replace(/[^\p{L}\p{N}\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/gu, '') // keep letters, numbers, CJK
     .trim()
 }
 
@@ -26,25 +47,21 @@ const splitWords = (text: string): string[] => {
 
   for (const char of text) {
     if (CJK_RANGE.test(char)) {
-      // CJK character - flush current word, add CJK char as its own word
       if (currentWord.trim()) {
         results.push(currentWord.trim())
         currentWord = ''
       }
       results.push(char)
     } else if (/\s/.test(char)) {
-      // Whitespace - flush current word
       if (currentWord.trim()) {
         results.push(currentWord.trim())
         currentWord = ''
       }
     } else {
-      // Other characters (Latin, punctuation) - accumulate
       currentWord += char
     }
   }
 
-  // Flush remaining
   if (currentWord.trim()) {
     results.push(currentWord.trim())
   }
@@ -53,20 +70,43 @@ const splitWords = (text: string): string[] => {
 }
 
 /**
- * Check if two words are similar enough to be considered a match
- * Uses prefix matching and character overlap
+ * Common stop words (already lowercase/normalized)
  */
-const wordsSimilar = (spoken: string, script: string): boolean => {
-  const a = normalizeWord(spoken)
-  const b = normalizeWord(script)
+const STOP_WORDS = new Set([
+  'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'with', 'in',
+  'is', 'am', 'are', 'was', 'were', 'be', 'being', 'been'
+])
 
+/**
+ * Check if a normalized word is a stop word
+ * For use with already-normalized strings (avoids redundant normalization)
+ */
+const isStopWordNormalized = (normalizedWord: string): boolean => {
+  // CJK characters are never stop words
+  if (/[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/.test(normalizedWord)) {
+    return false
+  }
+  return STOP_WORDS.has(normalizedWord)
+}
+
+/**
+ * Check if a word is a stop word (normalizes first)
+ */
+const isStopWord = (word: string): boolean => {
+  return isStopWordNormalized(normalizeWord(word))
+}
+
+/**
+ * Check if two normalized words are similar enough to be considered a match
+ */
+const wordsSimilarNormalized = (a: string, b: string): boolean => {
   if (a === b) return true
   if (a.length === 0 || b.length === 0) return false
 
   // For very short words (1-2 chars), require exact match
   if (a.length <= 2 || b.length <= 2) return a === b
 
-  // Check if one is prefix of other (speech recognition often cuts words)
+  // Check if one is prefix of other
   if (a.startsWith(b) || b.startsWith(a)) return true
 
   // Check character overlap ratio
@@ -82,6 +122,13 @@ const wordsSimilar = (spoken: string, script: string): boolean => {
 }
 
 /**
+ * Check if two words are similar (normalizes both)
+ */
+const wordsSimilar = (spoken: string, script: string): boolean => {
+  return wordsSimilarNormalized(normalizeWord(spoken), normalizeWord(script))
+}
+
+/**
  * Check if two words are exactly the same (after normalization)
  */
 const wordsExactMatch = (spoken: string, script: string): boolean => {
@@ -89,36 +136,15 @@ const wordsExactMatch = (spoken: string, script: string): boolean => {
 }
 
 /**
- * Common stop words to filter out for more robust matching
- * These words are too common and cause false matches
+ * Check if two normalized words are exactly the same
  */
-const STOP_WORDS = new Set([
-  'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'with', 'in',
-  'is', 'am', 'are', 'was', 'were', 'be', 'being', 'been'
-])
-
-/**
- * Check if a word is a stop word (should be filtered for matching)
- */
-const isStopWord = (word: string): boolean => {
-  const normalized = normalizeWord(word)
-  // CJK characters are never stop words
-  if (/[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/.test(normalized)) {
-    return false
-  }
-  return STOP_WORDS.has(normalized)
-}
-
-/**
- * Filter array to only significant (non-stop) words
- */
-const filterSignificant = (words: string[]): string[] => {
-  return words.filter(w => !isStopWord(w))
+const wordsExactMatchNormalized = (a: string, b: string): boolean => {
+  return a === b
 }
 
 /**
  * Windowed DP alignment for recovery scenarios
- * Used when phrase matching fails
+ * Uses pre-normalized words for efficiency
  */
 interface AlignmentResult {
   lastMatchedArrayIdx: number
@@ -127,10 +153,10 @@ interface AlignmentResult {
 }
 
 const alignSequencesDP = (
-  spoken: string[],
-  scriptWindow: { id: number, text: string }[]
+  spokenNormalized: string[],
+  scriptWindow: PrecomputedWord[]
 ): AlignmentResult => {
-  const n = spoken.length
+  const n = spokenNormalized.length
   const m = scriptWindow.length
 
   if (n === 0 || m === 0) {
@@ -152,7 +178,7 @@ const alignSequencesDP = (
 
   for (let i = 1; i <= n; i++) {
     for (let j = 1; j <= m; j++) {
-      const isMatch = wordsSimilar(spoken[i - 1]!, scriptWindow[j - 1]!.text)
+      const isMatch = wordsSimilarNormalized(spokenNormalized[i - 1]!, scriptWindow[j - 1]!.normalized)
       const diagScore = dp[i - 1]![j - 1]! + (isMatch ? MATCH_SCORE : MISMATCH_PENALTY)
       const upScore = dp[i - 1]![j]! + GAP_PENALTY
       const leftScore = dp[i]![j - 1]! + GAP_PENALTY
@@ -175,7 +201,7 @@ const alignSequencesDP = (
   let matchCount = 0
 
   while (i > 0 && j > 0) {
-    const isMatch = wordsSimilar(spoken[i - 1]!, scriptWindow[j - 1]!.text)
+    const isMatch = wordsSimilarNormalized(spokenNormalized[i - 1]!, scriptWindow[j - 1]!.normalized)
     const diagScore = dp[i - 1]![j - 1]! + (isMatch ? MATCH_SCORE : MISMATCH_PENALTY)
 
     if (dp[i]![j] === diagScore) {
@@ -195,221 +221,271 @@ const alignSequencesDP = (
   return { lastMatchedArrayIdx, score: bestScore, matchCount }
 }
 
+/**
+ * Pre-compute script data for efficient matching
+ * Call this once when script changes, not on every match attempt
+ */
+const precomputeScript = (scriptWords: { id: number, text: string }[]): PrecomputedScript => {
+  const words: PrecomputedWord[] = []
+  const significant: SignificantWord[] = []
+  const idToArrayIdx = new Map<number, number>()
+
+  scriptWords.forEach((sw, idx) => {
+    const normalized = normalizeWord(sw.text)
+    const word: PrecomputedWord = {
+      id: sw.id,
+      text: sw.text,
+      normalized
+    }
+    words.push(word)
+    idToArrayIdx.set(sw.id, idx)
+
+    if (!isStopWordNormalized(normalized)) {
+      significant.push({
+        word: normalized,
+        originalId: sw.id,
+        arrayIdx: idx
+      })
+    }
+  })
+
+  return { words, significant, idToArrayIdx }
+}
+
 export const useFuzzyMatch = () => {
-  // Configuration - tuned based on reference.js approach
-  const MAX_SPOKEN_WORDS = 20      // Max spoken words to consider
-  const MAX_PHRASE_LEN = 5         // consider up to last N transcript words (reference.js)
-  const WINDOW_BEHIND = 2          // allow slight backtracking to recover (reference.js)
-  const WINDOW_AHEAD = 15          // how many significant words ahead to search (reference.js)
-  const MAX_JUMP_SINGLE_WORD = 5   // Single word match: max significant words to jump
-  const MIN_LEN_FOR_LONG_JUMP = 2  // Require 2+ words to allow jumps > MAX_JUMP_SINGLE_WORD
-  const MAX_FORWARD_ORIGINAL = 14  // Max original words to skip forward
-  const MAX_JUMP_SINGLE_ORIGINAL = 6 // For single word matches, tighter original word cap
+  // Configuration - matching reference.js
+  const MAX_SPOKEN_WORDS = 20
+  const MAX_PHRASE_LEN = 5
+  const WINDOW_BEHIND = 2
+  const WINDOW_AHEAD = 15
+  const MAX_JUMP_SINGLE_WORD = 5
+  const MIN_LEN_FOR_LONG_JUMP = 2
+  const MAX_FORWARD_ORIGINAL = 14
+  const MAX_JUMP_SINGLE_ORIGINAL = 6
 
   /**
-   * Find best match using hybrid approach:
-   * 1. Primary: Phrase-based matching on significant words (like reference.js)
-   * 2. Fallback: DP alignment for recovery when phrase matching fails
-   *
-   * This combines the precision of phrase matching with the flexibility of DP.
-   *
-   * @param spokenWords - All accumulated words spoken
-   * @param scriptWords - Full script words array
-   * @param currentIndex - Currently highlighted word index (-1 if none)
+   * Create an optimized matcher for a specific script
+   * Pre-computes data structures once, reuses them for all match attempts
    */
+  const createMatcher = (scriptWords: { id: number, text: string }[]) => {
+    // Pre-compute once when script changes
+    const precomputed = precomputeScript(scriptWords)
+
+    /**
+     * Find best match using hybrid approach:
+     * 1. Primary: Phrase-based matching on significant words
+     * 2. Fallback: DP alignment for recovery when phrase matching fails
+     */
+    const findBestMatch = (
+      spokenWords: string[],
+      currentIndex: number
+    ): MatchResult | null => {
+      if (spokenWords.length === 0 || precomputed.words.length === 0) return null
+
+      // Pre-normalize spoken words once for this call
+      const spokenNormalized = spokenWords.map(w => normalizeWord(w))
+
+      const nextExpectedIndex = currentIndex + 1
+      const nextWordIdx = precomputed.idToArrayIdx.get(nextExpectedIndex)
+      const nextWord = nextWordIdx !== undefined ? precomputed.words[nextWordIdx] : undefined
+
+      // Rule 1: Single word - only match if it exactly equals the next expected word
+      if (spokenWords.length === 1) {
+        if (nextWord && wordsExactMatchNormalized(spokenNormalized[0]!, nextWord.normalized)) {
+          return { index: nextExpectedIndex, word: nextWord.text }
+        }
+        return null
+      }
+
+      // Rule 2: Two words - require exact match for stability
+      if (spokenWords.length === 2) {
+        if (nextWord && wordsExactMatchNormalized(spokenNormalized[1]!, nextWord.normalized)) {
+          return { index: nextExpectedIndex, word: nextWord.text }
+        }
+        const wordAfterNextIdx = precomputed.idToArrayIdx.get(nextExpectedIndex + 1)
+        const wordAfterNext = wordAfterNextIdx !== undefined ? precomputed.words[wordAfterNextIdx] : undefined
+        if (nextWord && wordAfterNext) {
+          if (wordsExactMatchNormalized(spokenNormalized[0]!, nextWord.normalized) &&
+            wordsExactMatchNormalized(spokenNormalized[1]!, wordAfterNext.normalized)) {
+            return { index: nextExpectedIndex + 1, word: wordAfterNext.text }
+          }
+        }
+        return null
+      }
+
+      // Rule 3: 3+ words - use hybrid phrase matching + DP fallback
+      const limitedSpokenNormalized = spokenNormalized.length > MAX_SPOKEN_WORDS
+        ? spokenNormalized.slice(-MAX_SPOKEN_WORDS)
+        : spokenNormalized
+
+      // Filter to significant words (already normalized)
+      const spokenSignificant = limitedSpokenNormalized.filter(w => !isStopWordNormalized(w))
+      if (spokenSignificant.length === 0) {
+        // All stop words - try exact match on last word
+        if (nextWord && wordsExactMatchNormalized(limitedSpokenNormalized[limitedSpokenNormalized.length - 1]!, nextWord.normalized)) {
+          return { index: nextExpectedIndex, word: nextWord.text }
+        }
+        return null
+      }
+
+      // Use pre-computed significant word index
+      const allScriptSignificant = precomputed.significant
+
+      if (allScriptSignificant.length === 0) return null
+
+      // Find the last matched significant word index
+      let lastSigIdx = -1
+      if (currentIndex >= 0) {
+        for (let i = allScriptSignificant.length - 1; i >= 0; i--) {
+          if (allScriptSignificant[i]!.originalId <= currentIndex) {
+            lastSigIdx = i
+            break
+          }
+        }
+      }
+
+      // Calculate expected next position in original word space
+      const lastOriginal = lastSigIdx >= 0 ? allScriptSignificant[lastSigIdx]!.originalId : -1
+      const expectedNextOriginal = lastOriginal + 1
+
+      // Define search bounds in significant-word index space
+      const searchStartSig = Math.max(0, lastSigIdx + 1 - WINDOW_BEHIND)
+      const searchEndSig = Math.min(allScriptSignificant.length, lastSigIdx + 1 + WINDOW_AHEAD)
+
+      // === PRIMARY: Phrase-based matching on significant words ===
+      const phraseLenMax = Math.min(spokenSignificant.length, MAX_PHRASE_LEN)
+      let best: { score: number, endId: number, length: number } | null = null
+
+      for (let len = phraseLenMax; len >= 1; len--) {
+        // Take last `len` significant words from spoken (already normalized)
+        const phrase = spokenSignificant.slice(-len)
+
+        // Search within bounded range
+        for (let i = searchStartSig; i <= searchEndSig - len; i++) {
+          // Check if phrase matches at position i
+          let matches = true
+          for (let j = 0; j < len; j++) {
+            if (allScriptSignificant[i + j]!.word !== phrase[j]) {
+              matches = false
+              break
+            }
+          }
+
+          if (!matches) continue
+
+          const startItem = allScriptSignificant[i]!
+          const endItem = allScriptSignificant[i + len - 1]!
+
+          // Calculate deltas
+          const forwardSigDelta = i - (lastSigIdx + 1)
+          const forwardOrigDelta = startItem.originalId - expectedNextOriginal
+
+          // Guard: prevent large backwards jumps
+          if (forwardSigDelta < -WINDOW_BEHIND) continue
+
+          // Guard: single-word matches can't jump too far
+          if (len === 1 && (forwardSigDelta > MAX_JUMP_SINGLE_WORD || forwardOrigDelta > MAX_JUMP_SINGLE_ORIGINAL)) continue
+
+          // Guard: require longer phrase for big jumps
+          if (forwardOrigDelta > MAX_FORWARD_ORIGINAL && len < MIN_LEN_FOR_LONG_JUMP) continue
+
+          // Score: prefer longer matches, then closer to expected position
+          const distance = Math.abs(forwardOrigDelta)
+          const score = len * 10 - distance - (i * 0.001)
+
+          if (!best || score > best.score) {
+            best = {
+              score,
+              endId: endItem.originalId,
+              length: len
+            }
+          }
+        }
+
+        // Early exit if we found a good multi-word match
+        if (best && best.length >= 2) break
+      }
+
+      // If phrase matching found a result, return it
+      if (best) {
+        const matchedWordIdx = precomputed.idToArrayIdx.get(best.endId)
+        const matchedWord = matchedWordIdx !== undefined ? precomputed.words[matchedWordIdx]!.text : ''
+        return {
+          index: best.endId,
+          word: matchedWord
+        }
+      }
+
+      // === FALLBACK: DP alignment for recovery ===
+      const windowStartIdx = Math.max(0, currentIndex - WINDOW_BEHIND + 1)
+      const windowEndIdx = Math.min(precomputed.words.length, currentIndex + MAX_FORWARD_ORIGINAL + 1)
+
+      // Find array indices for window bounds (O(1) would require sorted search, but window is small)
+      let startArrayIdx = 0
+      for (let i = 0; i < precomputed.words.length; i++) {
+        if (precomputed.words[i]!.id >= windowStartIdx) {
+          startArrayIdx = i
+          break
+        }
+      }
+
+      let endArrayIdx = precomputed.words.length
+      for (let i = startArrayIdx; i < precomputed.words.length; i++) {
+        if (precomputed.words[i]!.id >= windowEndIdx) {
+          endArrayIdx = i
+          break
+        }
+      }
+
+      const scriptWindow = precomputed.words.slice(startArrayIdx, endArrayIdx)
+      if (scriptWindow.length === 0) return null
+
+      const { lastMatchedArrayIdx, score, matchCount } = alignSequencesDP(
+        limitedSpokenNormalized,
+        scriptWindow
+      )
+
+      if (lastMatchedArrayIdx < 0) return null
+
+      const matchRatio = matchCount / limitedSpokenNormalized.length
+      const avgScorePerWord = score / limitedSpokenNormalized.length
+      const lastMatchedId = scriptWindow[lastMatchedArrayIdx]!.id
+      const jumpDistance = lastMatchedId - currentIndex
+
+      const MIN_MATCH_RATIO = 0.5
+      const MIN_SCORE_PER_WORD = 1.0
+
+      if (matchCount <= 1 && jumpDistance > MAX_JUMP_SINGLE_WORD) return null
+
+      if (
+        lastMatchedId > currentIndex &&
+        matchRatio >= MIN_MATCH_RATIO &&
+        avgScorePerWord >= MIN_SCORE_PER_WORD
+      ) {
+        return {
+          index: lastMatchedId,
+          word: scriptWindow[lastMatchedArrayIdx]!.text
+        }
+      }
+
+      return null
+    }
+
+    return { findBestMatch }
+  }
+
+  // Legacy API for backwards compatibility
   const findBestMatch = (
     spokenWords: string[],
     scriptWords: { id: number, text: string }[],
     currentIndex: number
   ): MatchResult | null => {
-    if (spokenWords.length === 0 || scriptWords.length === 0) return null
-
-    const nextExpectedIndex = currentIndex + 1
-    const nextWord = scriptWords.find(w => w.id === nextExpectedIndex)
-
-    // Rule 1: Single word - only match if it exactly equals the next expected word
-    if (spokenWords.length === 1) {
-      if (nextWord && wordsExactMatch(spokenWords[0]!, nextWord.text)) {
-        return { index: nextExpectedIndex, word: nextWord.text }
-      }
-      return null
-    }
-
-    // Rule 2: Two words - require exact match for stability
-    if (spokenWords.length === 2) {
-      if (nextWord && wordsExactMatch(spokenWords[1]!, nextWord.text)) {
-        return { index: nextExpectedIndex, word: nextWord.text }
-      }
-      const wordAfterNext = scriptWords.find(w => w.id === nextExpectedIndex + 1)
-      if (nextWord && wordAfterNext) {
-        if (wordsExactMatch(spokenWords[0]!, nextWord.text) &&
-          wordsExactMatch(spokenWords[1]!, wordAfterNext.text)) {
-          return { index: nextExpectedIndex + 1, word: wordAfterNext.text }
-        }
-      }
-      return null
-    }
-
-    // Rule 3: 3+ words - use hybrid phrase matching + DP fallback
-    const limitedSpokenWords = spokenWords.length > MAX_SPOKEN_WORDS
-      ? spokenWords.slice(-MAX_SPOKEN_WORDS)
-      : spokenWords
-
-    // Filter to significant words for phrase matching
-    const spokenSignificant = filterSignificant(limitedSpokenWords)
-    if (spokenSignificant.length === 0) {
-      // All stop words - try exact match on last word
-      if (nextWord && wordsExactMatch(limitedSpokenWords[limitedSpokenWords.length - 1]!, nextWord.text)) {
-        return { index: nextExpectedIndex, word: nextWord.text }
-      }
-      return null
-    }
-
-    // Build FULL significant word index for entire script (like reference.js)
-    // This gives us stable indices in significant-word space
-    const allScriptSignificant: { word: string, originalId: number }[] = []
-    scriptWords.forEach((sw) => {
-      if (!isStopWord(sw.text)) {
-        allScriptSignificant.push({
-          word: normalizeWord(sw.text),
-          originalId: sw.id
-        })
-      }
-    })
-
-    if (allScriptSignificant.length === 0) return null
-
-    // Find the last matched significant word index (position in allScriptSignificant)
-    let lastSigIdx = -1
-    if (currentIndex >= 0) {
-      for (let i = allScriptSignificant.length - 1; i >= 0; i--) {
-        if (allScriptSignificant[i]!.originalId <= currentIndex) {
-          lastSigIdx = i
-          break
-        }
-      }
-    }
-
-    // Calculate expected next position in original word space
-    const lastOriginal = lastSigIdx >= 0 ? allScriptSignificant[lastSigIdx]!.originalId : -1
-    const expectedNextOriginal = lastOriginal + 1
-
-    // Define search bounds in significant-word index space (like reference.js)
-    const searchStartSig = Math.max(0, lastSigIdx + 1 - WINDOW_BEHIND)
-    const searchEndSig = Math.min(allScriptSignificant.length, lastSigIdx + 1 + WINDOW_AHEAD)
-
-    // === PRIMARY: Phrase-based matching on significant words ===
-    const phraseLenMax = Math.min(spokenSignificant.length, MAX_PHRASE_LEN)
-    let best: { score: number, endId: number, length: number } | null = null
-
-    for (let len = phraseLenMax; len >= 1; len--) {
-      // Take last `len` significant words from spoken
-      const phrase = spokenSignificant.slice(-len).map(w => normalizeWord(w))
-
-      // Search within bounded range of significant word indices
-      for (let i = searchStartSig; i <= searchEndSig - len; i++) {
-        // Check if phrase matches at position i
-        let matches = true
-        for (let j = 0; j < len; j++) {
-          if (allScriptSignificant[i + j]!.word !== phrase[j]) {
-            matches = false
-            break
-          }
-        }
-
-        if (!matches) continue
-
-        const startItem = allScriptSignificant[i]!
-        const endItem = allScriptSignificant[i + len - 1]!
-
-        // Calculate deltas from both significant word space and original word space
-        // Use START position for forward delta (like reference.js)
-        const forwardSigDelta = i - (lastSigIdx + 1)
-        const forwardOrigDelta = startItem.originalId - expectedNextOriginal
-
-        // Guard: prevent large backwards jumps in significant word space
-        if (forwardSigDelta < -WINDOW_BEHIND) continue
-
-        // Guard: single-word matches can't jump too far (in either space)
-        if (len === 1 && (forwardSigDelta > MAX_JUMP_SINGLE_WORD || forwardOrigDelta > MAX_JUMP_SINGLE_ORIGINAL)) continue
-
-        // Guard: require longer phrase for big jumps (in original word space)
-        if (forwardOrigDelta > MAX_FORWARD_ORIGINAL && len < MIN_LEN_FOR_LONG_JUMP) continue
-
-        // Score: prefer longer matches, then closer to expected position, then earlier in search
-        const distance = Math.abs(forwardOrigDelta)
-        const score = len * 10 - distance - (i * 0.001)
-
-        if (!best || score > best.score) {
-          best = {
-            score,
-            endId: endItem.originalId,
-            length: len
-          }
-        }
-      }
-
-      // Early exit if we found a good multi-word match
-      if (best && best.length >= 2) break
-    }
-
-    // If phrase matching found a result, return it
-    if (best) {
-      const matchedWord = scriptWords.find(w => w.id === best.endId)?.text ?? ''
-      return {
-        index: best.endId,
-        word: matchedWord
-      }
-    }
-
-    // === FALLBACK: DP alignment for recovery ===
-    // Use when phrase matching fails (ASR errors, missing words, etc.)
-    const windowStartIdx = Math.max(0, currentIndex - WINDOW_BEHIND + 1)
-    const windowEndIdx = Math.min(scriptWords.length, currentIndex + MAX_FORWARD_ORIGINAL + 1)
-
-    const startArrayIdx = scriptWords.findIndex(w => w.id >= windowStartIdx)
-    if (startArrayIdx < 0) return null
-
-    let endArrayIdx = scriptWords.findIndex(w => w.id >= windowEndIdx)
-    if (endArrayIdx < 0) endArrayIdx = scriptWords.length
-
-    const scriptWindow = scriptWords.slice(startArrayIdx, endArrayIdx)
-    if (scriptWindow.length === 0) return null
-
-    const { lastMatchedArrayIdx, score, matchCount } = alignSequencesDP(
-      limitedSpokenWords,
-      scriptWindow
-    )
-
-    if (lastMatchedArrayIdx < 0) return null
-
-    const matchRatio = matchCount / limitedSpokenWords.length
-    const avgScorePerWord = score / limitedSpokenWords.length
-    const lastMatchedId = scriptWindow[lastMatchedArrayIdx]!.id
-    const jumpDistance = lastMatchedId - currentIndex
-
-    // Stricter thresholds for DP fallback to avoid false positives
-    const MIN_MATCH_RATIO = 0.5
-    const MIN_SCORE_PER_WORD = 1.0
-
-    // Guard: DP single match can't jump too far either
-    if (matchCount <= 1 && jumpDistance > MAX_JUMP_SINGLE_WORD) return null
-
-    if (
-      lastMatchedId > currentIndex &&
-      matchRatio >= MIN_MATCH_RATIO &&
-      avgScorePerWord >= MIN_SCORE_PER_WORD
-    ) {
-      return {
-        index: lastMatchedId,
-        word: scriptWindow[lastMatchedArrayIdx]!.text
-      }
-    }
-
-    return null
+    const matcher = createMatcher(scriptWords)
+    return matcher.findBestMatch(spokenWords, currentIndex)
   }
 
   return {
+    createMatcher,
     findBestMatch,
     wordsSimilar,
     wordsExactMatch,

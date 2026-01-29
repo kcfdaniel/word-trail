@@ -63,8 +63,11 @@ watch(() => props.script, (newScript) => {
   setCurrentScript(newScript)
 })
 
-const { findBestMatch, splitWords } = useFuzzyMatch()
+const { createMatcher, splitWords } = useFuzzyMatch()
 const { isDebugEnabled, showDebugPanel, toggleDebugPanel } = useDebugMode()
+
+// Create optimized matcher - only recomputes when scriptWords changes
+const matcher = computed(() => createMatcher(scriptWords.value))
 
 const showEditor = ref(false)
 const lastMatch = ref<MatchResult | null>(null)
@@ -85,9 +88,9 @@ watch([transcript, interimTranscript], () => {
   const spokenWords = allSpokenWords.value
   if (spokenWords.length === 0) return
 
-  const match = findBestMatch(
+  // Use pre-computed matcher for O(1) lookups
+  const match = matcher.value.findBestMatch(
     spokenWords,
-    scriptWords.value,
     currentIndex.value
   )
 
