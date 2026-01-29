@@ -93,15 +93,8 @@ const wordsExactMatch = (spoken: string, script: string): boolean => {
  * These words are too common and cause false matches
  */
 const STOP_WORDS = new Set([
-  // English
-  'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from',
-  'by', 'with', 'in', 'is', 'am', 'are', 'was', 'were', 'be', 'being', 'been',
-  'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
-  'may', 'might', 'must', 'shall', 'can', 'of', 'it', 'its', 'as', 'if', 'that',
-  'which', 'who', 'whom', 'this', 'these', 'those', 'then', 'than', 'so', 'no',
-  'not', 'only', 'own', 'same', 'just', 'also', 'very', 'too', 'any', 'each',
-  'i', 'me', 'my', 'we', 'us', 'our', 'you', 'your', 'he', 'him', 'his', 'she',
-  'her', 'they', 'them', 'their', 'what', 'all', 'been', 'into', 'through'
+  'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'with', 'in',
+  'is', 'am', 'are', 'was', 'were', 'be', 'being', 'been'
 ])
 
 /**
@@ -204,12 +197,14 @@ const alignSequencesDP = (
 
 export const useFuzzyMatch = () => {
   // Configuration - tuned based on reference.js approach
-  const MAX_SPOKEN_WORDS = 20     // Max spoken words to consider
-  const MAX_PHRASE_LEN = 6        // Max phrase length to try matching
-  const WINDOW_BEHIND = 3         // Backtrack allowance
-  const WINDOW_AHEAD = 25         // Search ahead window (smaller = fewer false jumps)
-  const MAX_JUMP_SINGLE_WORD = 5  // Single word match: max words to jump
-  const MIN_LEN_FOR_LONG_JUMP = 2 // Require 2+ words to allow jumps > MAX_JUMP_SINGLE_WORD
+  const MAX_SPOKEN_WORDS = 20      // Max spoken words to consider
+  const MAX_PHRASE_LEN = 5         // consider up to last N transcript words (reference.js)
+  const WINDOW_BEHIND = 2          // allow slight backtracking to recover (reference.js)
+  const WINDOW_AHEAD = 15          // how many significant words ahead to search (reference.js)
+  const MAX_JUMP_SINGLE_WORD = 5   // Single word match: max significant words to jump
+  const MIN_LEN_FOR_LONG_JUMP = 2  // Require 2+ words to allow jumps > MAX_JUMP_SINGLE_WORD
+  const MAX_FORWARD_ORIGINAL = 14  // Max original words to skip forward
+  const MAX_JUMP_SINGLE_ORIGINAL = 6 // For single word matches, tighter original word cap
 
   /**
    * Find best match using hybrid approach:
@@ -270,45 +265,53 @@ export const useFuzzyMatch = () => {
       return null
     }
 
-    // Build significant word index for script (with original IDs)
-    const windowStartIdx = Math.max(0, currentIndex - WINDOW_BEHIND + 1)
-    const windowEndIdx = Math.min(scriptWords.length, currentIndex + WINDOW_AHEAD + 1)
-
-    const startArrayIdx = scriptWords.findIndex(w => w.id >= windowStartIdx)
-    if (startArrayIdx < 0) return null
-
-    let endArrayIdx = scriptWords.findIndex(w => w.id >= windowEndIdx)
-    if (endArrayIdx < 0) endArrayIdx = scriptWords.length
-
-    const scriptWindow = scriptWords.slice(startArrayIdx, endArrayIdx)
-    if (scriptWindow.length === 0) return null
-
-    // Build significant words list with their original IDs
-    const scriptSignificant: { word: string, originalId: number, arrayIdx: number }[] = []
-    scriptWindow.forEach((sw, idx) => {
+    // Build FULL significant word index for entire script (like reference.js)
+    // This gives us stable indices in significant-word space
+    const allScriptSignificant: { word: string, originalId: number }[] = []
+    scriptWords.forEach((sw) => {
       if (!isStopWord(sw.text)) {
-        scriptSignificant.push({
+        allScriptSignificant.push({
           word: normalizeWord(sw.text),
-          originalId: sw.id,
-          arrayIdx: idx
+          originalId: sw.id
         })
       }
     })
 
+    if (allScriptSignificant.length === 0) return null
+
+    // Find the last matched significant word index (position in allScriptSignificant)
+    let lastSigIdx = -1
+    if (currentIndex >= 0) {
+      for (let i = allScriptSignificant.length - 1; i >= 0; i--) {
+        if (allScriptSignificant[i]!.originalId <= currentIndex) {
+          lastSigIdx = i
+          break
+        }
+      }
+    }
+
+    // Calculate expected next position in original word space
+    const lastOriginal = lastSigIdx >= 0 ? allScriptSignificant[lastSigIdx]!.originalId : -1
+    const expectedNextOriginal = lastOriginal + 1
+
+    // Define search bounds in significant-word index space (like reference.js)
+    const searchStartSig = Math.max(0, lastSigIdx + 1 - WINDOW_BEHIND)
+    const searchEndSig = Math.min(allScriptSignificant.length, lastSigIdx + 1 + WINDOW_AHEAD)
+
     // === PRIMARY: Phrase-based matching on significant words ===
     const phraseLenMax = Math.min(spokenSignificant.length, MAX_PHRASE_LEN)
-    let best: { score: number, endId: number, length: number, arrayIdx: number } | null = null
+    let best: { score: number, endId: number, length: number } | null = null
 
     for (let len = phraseLenMax; len >= 1; len--) {
       // Take last `len` significant words from spoken
       const phrase = spokenSignificant.slice(-len).map(w => normalizeWord(w))
 
-      // Search for this phrase in script significant words
-      for (let i = 0; i <= scriptSignificant.length - len; i++) {
+      // Search within bounded range of significant word indices
+      for (let i = searchStartSig; i <= searchEndSig - len; i++) {
         // Check if phrase matches at position i
         let matches = true
         for (let j = 0; j < len; j++) {
-          if (scriptSignificant[i + j]!.word !== phrase[j]) {
+          if (allScriptSignificant[i + j]!.word !== phrase[j]) {
             matches = false
             break
           }
@@ -316,27 +319,32 @@ export const useFuzzyMatch = () => {
 
         if (!matches) continue
 
-        const endItem = scriptSignificant[i + len - 1]!
-        const jumpDistance = endItem.originalId - currentIndex
+        const startItem = allScriptSignificant[i]!
+        const endItem = allScriptSignificant[i + len - 1]!
 
-        // Guard: single-word matches can't jump too far
-        if (len === 1 && jumpDistance > MAX_JUMP_SINGLE_WORD) continue
+        // Calculate deltas from both significant word space and original word space
+        // Use START position for forward delta (like reference.js)
+        const forwardSigDelta = i - (lastSigIdx + 1)
+        const forwardOrigDelta = startItem.originalId - expectedNextOriginal
 
-        // Guard: require longer phrase for big jumps
-        if (jumpDistance > MAX_JUMP_SINGLE_WORD && len < MIN_LEN_FOR_LONG_JUMP) continue
+        // Guard: prevent large backwards jumps in significant word space
+        if (forwardSigDelta < -WINDOW_BEHIND) continue
 
-        // Guard: must advance (no backward movement)
-        if (endItem.originalId <= currentIndex) continue
+        // Guard: single-word matches can't jump too far (in either space)
+        if (len === 1 && (forwardSigDelta > MAX_JUMP_SINGLE_WORD || forwardOrigDelta > MAX_JUMP_SINGLE_ORIGINAL)) continue
 
-        // Score: prefer longer matches, then closer positions
-        const score = len * 10 - jumpDistance - (i * 0.001)
+        // Guard: require longer phrase for big jumps (in original word space)
+        if (forwardOrigDelta > MAX_FORWARD_ORIGINAL && len < MIN_LEN_FOR_LONG_JUMP) continue
+
+        // Score: prefer longer matches, then closer to expected position, then earlier in search
+        const distance = Math.abs(forwardOrigDelta)
+        const score = len * 10 - distance - (i * 0.001)
 
         if (!best || score > best.score) {
           best = {
             score,
             endId: endItem.originalId,
-            length: len,
-            arrayIdx: endItem.arrayIdx
+            length: len
           }
         }
       }
@@ -347,15 +355,31 @@ export const useFuzzyMatch = () => {
 
     // If phrase matching found a result, return it
     if (best) {
-      const matchedWord = scriptWindow[best.arrayIdx]!.text
+      console.log("MATCHING FOUND");
+      console.log({best});
+      const matchedWord = scriptWords.find(w => w.id === best.endId)?.text ?? ''
       return {
         index: best.endId,
         word: matchedWord
       }
     }
 
+    console.log("DP");
+
     // === FALLBACK: DP alignment for recovery ===
     // Use when phrase matching fails (ASR errors, missing words, etc.)
+    const windowStartIdx = Math.max(0, currentIndex - WINDOW_BEHIND + 1)
+    const windowEndIdx = Math.min(scriptWords.length, currentIndex + MAX_FORWARD_ORIGINAL + 1)
+
+    const startArrayIdx = scriptWords.findIndex(w => w.id >= windowStartIdx)
+    if (startArrayIdx < 0) return null
+
+    let endArrayIdx = scriptWords.findIndex(w => w.id >= windowEndIdx)
+    if (endArrayIdx < 0) endArrayIdx = scriptWords.length
+
+    const scriptWindow = scriptWords.slice(startArrayIdx, endArrayIdx)
+    if (scriptWindow.length === 0) return null
+
     const { lastMatchedArrayIdx, score, matchCount } = alignSequencesDP(
       limitedSpokenWords,
       scriptWindow
