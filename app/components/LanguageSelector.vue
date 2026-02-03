@@ -69,13 +69,17 @@ watch(filteredLanguages, (newFiltered) => {
   highlightedIndex.value = newFiltered.length > 0 ? 0 : -1
 })
 
-const openDropdown = () => {
-  isOpen.value = true
-  searchQuery.value = ''
-  highlightedIndex.value = -1
-  nextTick(() => {
-    inputRef.value?.focus()
-  })
+const toggleDropdown = () => {
+  if (isOpen.value) {
+    closeDropdown()
+  } else {
+    isOpen.value = true
+    searchQuery.value = ''
+    highlightedIndex.value = -1
+    nextTick(() => {
+      inputRef.value?.focus()
+    })
+  }
 }
 
 const closeDropdown = () => {
@@ -163,7 +167,7 @@ onUnmounted(() => {
       class="selector-button"
       :class="{ 'selector-button--open': isOpen }"
       :title="`Language: ${currentLang?.native}`"
-      @click="openDropdown"
+      @click="toggleDropdown"
     >
       <span class="selector-flag">{{ currentLang?.flag }}</span>
       <span class="selector-code">{{ currentLanguage.split('-')[0]?.toUpperCase() }}</span>
@@ -459,31 +463,5 @@ onUnmounted(() => {
 
 .dropdown-list::-webkit-scrollbar-thumb:hover {
   background: var(--border-medium, rgba(0, 0, 0, 0.25));
-}
-
-@media (max-width: 640px) {
-  .selector-code {
-    display: none;
-  }
-
-  .selector-button {
-    padding: 0.5rem;
-  }
-
-  .dropdown {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-height: 60vh;
-    border-radius: 1rem 1rem 0 0;
-    border-bottom: none;
-  }
-
-  .dropdown-list {
-    max-height: calc(60vh - 60px);
-  }
 }
 </style>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Script } from '~/composables/useScriptManager'
 
+const router = useRouter()
+
 const {
   scripts,
   currentScript,
@@ -9,6 +11,13 @@ const {
   updateScript,
   deleteScript
 } = useScriptManager()
+
+// Redirect to landing page if no scripts
+watch([isLoaded, scripts], ([loaded, scriptsList]) => {
+  if (loaded && scriptsList.length === 0) {
+    router.replace('/')
+  }
+}, { immediate: true })
 
 const searchQuery = ref('')
 const mode = ref<'list' | 'edit' | 'new'>('list')
@@ -198,13 +207,6 @@ const formatDate = (timestamp: number) => {
         class="empty-state"
       >
         <p>No scripts matching "{{ searchQuery }}"</p>
-      </div>
-
-      <div
-        v-else-if="scripts.length === 0"
-        class="empty-state"
-      >
-        <p>No scripts yet. Create one to get started!</p>
       </div>
 
       <div

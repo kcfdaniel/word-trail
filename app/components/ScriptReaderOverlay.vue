@@ -4,6 +4,7 @@ import type { MatchResult } from '~/composables/useFuzzyMatch'
 
 const props = defineProps<{
   script: Script
+  autoStart?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -56,6 +57,15 @@ const {
 // Set the script when component mounts
 onMounted(() => {
   setCurrentScript(props.script)
+  // Auto-start listening if autoStart prop is true
+  if (props.autoStart && isSupported.value) {
+    // Small delay to ensure speech recognition is initialized
+    setTimeout(() => {
+      if (!isListening.value) {
+        toggleSpeech()
+      }
+    }, 300)
+  }
 })
 
 // Update if script prop changes
@@ -124,6 +134,14 @@ const handleCloseEditor = () => {
 const handleWordClick = (wordId: number) => {
   setPositionAt(wordId)
   resetSpeech()
+  // Auto-start listening after clicking on a word to navigate
+  if (isSupported.value) {
+    setTimeout(() => {
+      if (!isListening.value) {
+        toggleSpeech()
+      }
+    }, 100)
+  }
 }
 
 const handleUpdateScript = (id: string, updates: { title?: string, content?: string }) => {

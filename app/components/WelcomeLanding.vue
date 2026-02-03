@@ -1,0 +1,573 @@
+<script setup lang="ts">
+const emit = defineEmits<{
+  'start-reading': [title: string, content: string, language: string]
+}>()
+
+const { isSupported, language, setLanguage } = useSpeech()
+
+// Persist language selection to localStorage
+const LANGUAGE_STORAGE_KEY = 'wordtrail-language'
+
+onMounted(() => {
+  const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY)
+  if (savedLanguage) {
+    setLanguage(savedLanguage)
+  }
+})
+
+const handleLanguageSelect = (lang: string) => {
+  setLanguage(lang)
+  localStorage.setItem(LANGUAGE_STORAGE_KEY, lang)
+}
+
+const title = ref('My First Script')
+const content = ref('')
+const contentRef = ref<HTMLTextAreaElement | null>(null)
+
+const wordCount = computed(() => {
+  return content.value.split(/\s+/).filter(w => w.trim().length > 0).length
+})
+
+const canStart = computed(() => content.value.trim().length > 0)
+
+// Platform detection for keyboard hint
+const isMac = computed(() => {
+  if (import.meta.client) {
+    return navigator.platform?.includes('Mac')
+  }
+  return false
+})
+
+const handleStart = () => {
+  if (!canStart.value) return
+  emit('start-reading', title.value || 'Untitled Script', content.value, language.value)
+}
+
+// Auto-focus textarea on mount
+onMounted(() => {
+  setTimeout(() => {
+    contentRef.value?.focus()
+  }, 600)
+})
+</script>
+
+<template>
+  <div class="welcome-landing">
+    <!-- Ambient background elements -->
+    <div class="ambient-glow ambient-glow--1" />
+    <div class="ambient-glow ambient-glow--2" />
+
+    <!-- Header -->
+    <header class="landing-header">
+      <div class="header-brand">
+        <img
+          src="/app-logo.png"
+          alt="WordTrail"
+          class="brand-logo"
+        />
+      </div>
+      <div class="header-actions">
+        <LanguageSelector
+          :current-language="language"
+          @select="handleLanguageSelect"
+        />
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="landing-main">
+      <div class="landing-content">
+        <!-- Hero section -->
+        <div class="hero-section">
+          <div class="hero-badge">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" x2="12" y1="19" y2="22" />
+            </svg>
+            Voice-Activated Teleprompter
+          </div>
+          <h1 class="hero-title">
+            Speak naturally.<br />
+            <span class="hero-title-accent">It follows you.</span>
+          </h1>
+          <p class="hero-description">
+            A teleprompter that listens to your voice and scrolls at your pace.
+            Supports 30+ languages.
+          </p>
+        </div>
+
+        <!-- Script input card -->
+        <div class="script-card">
+          <div class="card-inner">
+            <!-- Title input -->
+            <div class="input-group input-group--title">
+              <label for="script-title" class="input-label">Title</label>
+              <input
+                id="script-title"
+                v-model="title"
+                type="text"
+                class="title-input"
+                placeholder="Give your script a name..."
+              />
+            </div>
+
+            <!-- Content textarea -->
+            <div class="input-group input-group--content">
+              <label for="script-content" class="input-label">
+                Your Script
+                <span v-if="wordCount > 0" class="word-counter">
+                  {{ wordCount }} {{ wordCount === 1 ? 'word' : 'words' }}
+                </span>
+              </label>
+              <textarea
+                id="script-content"
+                ref="contentRef"
+                v-model="content"
+                class="content-textarea"
+                placeholder="Paste or type your script here...
+
+Try a speech, poem, presentation notes, or any text you want to practice reading aloud."
+                @keydown.meta.enter="handleStart"
+                @keydown.ctrl.enter="handleStart"
+              />
+            </div>
+
+            <!-- Start button -->
+            <button
+              class="start-button"
+              :class="{ 'start-button--ready': canStart }"
+              :disabled="!canStart"
+              @click="handleStart"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" x2="12" y1="19" y2="22" />
+              </svg>
+              Start Reading
+            </button>
+
+            <!-- Browser support warning -->
+            <p v-if="!isSupported" class="browser-warning">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" x2="12" y1="8" y2="12" />
+                <line x1="12" x2="12.01" y1="16" y2="16" />
+              </svg>
+              Speech recognition works best in Chrome, Edge, or Safari.
+            </p>
+          </div>
+        </div>
+
+        <!-- Subtle hint -->
+        <p class="keyboard-hint">
+          <kbd>{{ isMac ? '⌘' : 'Ctrl' }}</kbd> + <kbd>Enter</kbd> to start
+        </p>
+      </div>
+    </main>
+  </div>
+</template>
+
+<style scoped>
+.welcome-landing {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient glows for warmth */
+.ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ambient-glow--1 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 70%);
+  top: -200px;
+  right: -100px;
+}
+
+.ambient-glow--2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(217, 119, 6, 0.1) 0%, transparent 70%);
+  bottom: -150px;
+  left: -100px;
+}
+
+/* Header */
+.landing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+}
+
+.brand-logo {
+  height: 28px;
+  width: auto;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Main content */
+.landing-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.5rem 1.5rem;
+  position: relative;
+  z-index: 1;
+  min-height: 0;
+}
+
+.landing-content {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Hero section */
+.hero-section {
+  text-align: center;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.75rem;
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.hero-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.hero-title {
+  font-family: var(--font-script);
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 0 0 0.625rem;
+  letter-spacing: -0.02em;
+}
+
+.hero-title-accent {
+  color: var(--accent);
+}
+
+.hero-description {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Script card */
+.script-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.875rem;
+  overflow: hidden;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.card-inner {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Input groups */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.input-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.word-counter {
+  font-weight: 400;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+.title-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.title-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.title-input::placeholder {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.content-textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  font-family: var(--font-script);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  resize: none;
+  transition: all 0.2s ease;
+}
+
+.content-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.content-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Start button */
+.start-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  background: var(--button-secondary-bg);
+  color: var(--text-tertiary);
+  border: none;
+  border-radius: 0.625rem;
+  font-family: var(--font-ui);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: not-allowed;
+  transition: all 0.25s ease;
+}
+
+.start-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.start-button--ready {
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+  box-shadow: 0 2px 12px var(--accent-shadow);
+}
+
+.start-button--ready:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--accent-shadow);
+}
+
+.start-button--ready:active {
+  transform: translateY(0);
+}
+
+/* Browser warning */
+.browser-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  background: rgba(234, 179, 8, 0.1);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: #b45309;
+  margin: 0;
+}
+
+.dark .browser-warning {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fbbf24;
+}
+
+/* Keyboard hint */
+.keyboard-hint {
+  text-align: center;
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.keyboard-hint kbd {
+  display: inline-block;
+  padding: 0.1rem 0.3rem;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  box-shadow: 0 1px 0 var(--border-subtle);
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .landing-header {
+    padding: 0.625rem 1rem;
+  }
+
+  .brand-logo {
+    height: 26px;
+  }
+
+  .landing-main {
+    padding: 0 1rem 1rem;
+  }
+
+  .landing-content {
+    gap: 1rem;
+  }
+
+  .hero-title {
+    font-size: 1.75rem;
+  }
+
+  .hero-description {
+    font-size: 0.875rem;
+  }
+
+  .card-inner {
+    padding: 1rem;
+    gap: 0.875rem;
+  }
+
+  .content-textarea {
+    min-height: 120px;
+  }
+
+  .keyboard-hint {
+    display: none;
+  }
+}
+
+/* Animation on mount */
+.hero-section {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.script-card {
+  animation: fadeInUp 0.6s ease-out 0.1s both;
+}
+
+.keyboard-hint {
+  animation: fadeIn 0.6s ease-out 0.3s both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+</style>
