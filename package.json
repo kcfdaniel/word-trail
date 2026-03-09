@@ -19,6 +19,7 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@ckeditor/ckeditor5-vue": "^7.3.0",
     "@iconify-json/lucide": "^1.2.87",
     "@iconify-json/simple-icons": "^1.2.67",
     "@nuxt/a11y": "1.0.0-alpha.1",
@@ -30,6 +31,8 @@
     "@tailwindcss/vite": "^4.1.18",
     "@unhead/vue": "^2.1.2",
     "@vite-pwa/nuxt": "1.1.0",
+    "ckeditor5": "^47.5.0",
+    "fuzzysort": "^3.1.0",
     "nuxt": "^4.2.2",
     "tailwindcss": "^4.1.18"
   },

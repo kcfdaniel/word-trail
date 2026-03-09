@@ -1,7 +1,9 @@
 export interface Script {
   id: string
   title: string
-  content: string
+  content: string // Plain text content (legacy/fallback)
+  contentHtml?: string // Rich text HTML content
+  isRichText?: boolean // Flag to indicate rich text mode
   createdAt: number
   updatedAt: number
 }
@@ -119,11 +121,13 @@ export const useScriptManager = () => {
     }
   }
 
-  const createScript = (title: string, content: string): Script => {
+  const createScript = (title: string, content: string, options?: { contentHtml?: string, isRichText?: boolean }): Script => {
     const script: Script = {
       id: crypto.randomUUID(),
       title: title || 'Untitled Script',
       content,
+      contentHtml: options?.contentHtml,
+      isRichText: options?.isRichText ?? false,
       createdAt: Date.now(),
       updatedAt: Date.now()
     }
@@ -135,7 +139,7 @@ export const useScriptManager = () => {
     return script
   }
 
-  const updateScript = (id: string, updates: Partial<Pick<Script, 'title' | 'content'>>) => {
+  const updateScript = (id: string, updates: Partial<Pick<Script, 'title' | 'content' | 'contentHtml' | 'isRichText'>>) => {
     const index = scripts.value.findIndex(s => s.id === id)
     if (index === -1) return
 
@@ -146,6 +150,8 @@ export const useScriptManager = () => {
       id: existing.id,
       title: updates.title ?? existing.title,
       content: updates.content ?? existing.content,
+      contentHtml: updates.contentHtml ?? existing.contentHtml,
+      isRichText: updates.isRichText ?? existing.isRichText,
       createdAt: existing.createdAt,
       updatedAt: Date.now()
     }

@@ -49,17 +49,57 @@ const {
   activeWordIndex,
   setCurrentScript,
   updateScript,
-  handleMatch,
-  setPositionAt,
-  resetProgress
+  handleMatch: handleMatchLegacy,
+  setPositionAt: setPositionAtLegacy,
+  resetProgress: resetProgressLegacy
 } = useScriptManager()
 
-// Set the script when component mounts
+// Rich text highlight system
+const {
+  wordPositions: richTextWordPositions,
+  currentIndex: richTextCurrentIndex,
+  progress: richTextProgress,
+  handleMatch: handleMatchRichText,
+  setPositionAt: setPositionAtRichText,
+  resetProgress: resetProgressRichText,
+  initializeWordIndex,
+  getNormalizedWords,
+  clearAllHighlights
+} = useRichTextHighlight()
+
+// Check if script uses rich text
+const isRichTextMode = computed(() => {
+  return Boolean(props.script.isRichText && props.script.contentHtml)
+})
+
+// Get HTML content for rich text teleprompter
+const htmlContent = computed(() => {
+  if (props.script.contentHtml) {
+    return props.script.contentHtml
+  }
+  // Fallback: convert plain text to HTML
+  return props.script.content
+    .split('\n\n')
+    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+    .join('')
+})
+
+// Reference to the teleprompter component
+const richTextTeleprompterRef = ref<{
+  setPositionAt: (index: number) => void
+  resetProgress: () => void
+  wordPositions: { index: number; text: string; normalizedText: string }[]
+  currentIndex: number
+} | null>(null)
+
+// Set the script when component mounts (for legacy mode)
 onMounted(() => {
-  setCurrentScript(props.script)
+  if (!isRichTextMode.value) {
+    setCurrentScript(props.script)
+  }
+
   // Auto-start listening if autoStart prop is true
   if (props.autoStart && isSupported.value) {
-    // Small delay to ensure speech recognition is initialized
     setTimeout(() => {
       if (!isListening.value) {
         toggleSpeech()
@@ -70,14 +110,27 @@ onMounted(() => {
 
 // Update if script prop changes
 watch(() => props.script, (newScript) => {
-  setCurrentScript(newScript)
+  if (!isRichTextMode.value) {
+    setCurrentScript(newScript)
+  }
 })
 
 const { createMatcher, splitWords } = useFuzzyMatch()
 const { isDebugEnabled, showDebugPanel, toggleDebugPanel } = useDebugMode()
 
-// Create optimized matcher - only recomputes when scriptWords changes
-const matcher = computed(() => createMatcher(scriptWords.value))
+// Create optimized matcher based on mode
+const matcher = computed(() => {
+  if (isRichTextMode.value && getNormalizedWords.value.length > 0) {
+    // Create words array compatible with useFuzzyMatch
+    const words = getNormalizedWords.value.map(w => ({
+      id: w.id,
+      text: w.text,
+      state: 'pending' as const
+    }))
+    return createMatcher(words)
+  }
+  return createMatcher(scriptWords.value)
+})
 
 const showEditor = ref(false)
 const lastMatch = ref<MatchResult | null>(null)
@@ -91,22 +144,49 @@ const allSpokenWords = computed(() => {
   return [...finalWords, ...interimWords]
 })
 
+// Current index for progress tracking (mode-aware)
+const currentProgressIndex = computed(() => {
+  return isRichTextMode.value ? richTextCurrentIndex.value : currentIndex.value
+})
+
+// Progress percentage (mode-aware)
+const progressPercentage = computed(() => {
+  return isRichTextMode.value ? richTextProgress.value : getProgress.value
+})
+
+// Word count for debug panel
+const totalWordCount = computed(() => {
+  return isRichTextMode.value ? richTextWordPositions.value.length : scriptWords.value.length
+})
+
 // Watch for any transcript changes (interim or final)
 watch([transcript, interimTranscript], () => {
-  if (scriptWords.value.length === 0) return
+  const words = isRichTextMode.value
+    ? getNormalizedWords.value
+    : scriptWords.value
+
+  if (words.length === 0) return
 
   const spokenWords = allSpokenWords.value
   if (spokenWords.length === 0) return
 
+  const currentIdx = isRichTextMode.value
+    ? richTextCurrentIndex.value
+    : currentIndex.value
+
   // Use pre-computed matcher for O(1) lookups
   const match = matcher.value.findBestMatch(
     spokenWords,
-    currentIndex.value
+    currentIdx
   )
 
   if (match) {
     lastMatch.value = match
-    handleMatch(match.index)
+    if (isRichTextMode.value) {
+      handleMatchRichText(match.index)
+    } else {
+      handleMatchLegacy(match.index)
+    }
   }
 })
 
@@ -119,7 +199,11 @@ const handleToggleListening = () => {
 }
 
 const handleReset = () => {
-  resetProgress()
+  if (isRichTextMode.value) {
+    resetProgressRichText()
+  } else {
+    resetProgressLegacy()
+  }
   resetSpeech()
 }
 
@@ -132,7 +216,11 @@ const handleCloseEditor = () => {
 }
 
 const handleWordClick = (wordId: number) => {
-  setPositionAt(wordId)
+  if (isRichTextMode.value) {
+    setPositionAtRichText(wordId)
+  } else {
+    setPositionAtLegacy(wordId)
+  }
   resetSpeech()
   // Auto-start listening after clicking on a word to navigate
   if (isSupported.value) {
@@ -144,8 +232,13 @@ const handleWordClick = (wordId: number) => {
   }
 }
 
-const handleUpdateScript = (id: string, updates: { title?: string, content?: string }) => {
+const handleUpdateScript = (id: string, updates: { title?: string, content?: string, contentHtml?: string, isRichText?: boolean }) => {
   updateScript(id, updates)
+}
+
+// Handle initialization of rich text word index
+const handleRichTextInitialized = (wordCount: number) => {
+  console.log(`Rich text initialized with ${wordCount} words`)
 }
 
 const goBack = () => {
@@ -153,8 +246,19 @@ const goBack = () => {
   if (isListening.value) {
     toggleSpeech()
   }
+  // Clear highlights
+  if (isRichTextMode.value) {
+    clearAllHighlights()
+  }
   emit('close')
 }
+
+// Clean up on unmount
+onUnmounted(() => {
+  if (isRichTextMode.value) {
+    clearAllHighlights()
+  }
+})
 </script>
 
 <template>
@@ -186,6 +290,9 @@ const goBack = () => {
         </button>
         <span class="current-script-name">
           {{ script.title }}
+        </span>
+        <span v-if="isRichTextMode" class="rich-text-badge">
+          Rich Text
         </span>
       </div>
 
@@ -232,10 +339,27 @@ const goBack = () => {
     <!-- Main Content Area -->
     <div class="app-content">
       <main class="app-main">
+        <!-- Rich Text Mode -->
+        <RichTextTeleprompter
+          v-if="isRichTextMode"
+          ref="richTextTeleprompterRef"
+          :html-content="htmlContent"
+          :progress="progressPercentage"
+          :is-listening="isListening"
+          :show-debug="showDebugPanel"
+          @toggle-listening="handleToggleListening"
+          @reset="handleReset"
+          @edit="handleEdit"
+          @word-click="handleWordClick"
+          @initialized="handleRichTextInitialized"
+        />
+
+        <!-- Legacy Plain Text Mode -->
         <ScriptReader
+          v-else
           :words="scriptWords"
           :active-index="activeWordIndex"
-          :progress="getProgress"
+          :progress="progressPercentage"
           :is-listening="isListening"
           :show-debug="showDebugPanel"
           @toggle-listening="handleToggleListening"
@@ -292,10 +416,10 @@ const goBack = () => {
             :transcript="transcript"
             :interim-transcript="interimTranscript"
             :is-listening="isListening"
-            :current-index="currentIndex"
+            :current-index="currentProgressIndex"
             :last-match="lastMatch"
-            :words-count="scriptWords.length"
-            :progress="getProgress"
+            :words-count="totalWordCount"
+            :progress="progressPercentage"
             :sequence-length="allSpokenWords.length"
           />
         </aside>
@@ -375,6 +499,19 @@ const goBack = () => {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
+}
+
+.rich-text-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .header-right {
@@ -500,6 +637,10 @@ const goBack = () => {
   }
 
   .current-script-name {
+    display: none;
+  }
+
+  .rich-text-badge {
     display: none;
   }
 

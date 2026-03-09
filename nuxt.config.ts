@@ -10,37 +10,37 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@nuxt/scripts',
     '@nuxt/test-utils',
-    '@vite-pwa/nuxt'
+    '@vite-pwa/nuxt',
   ],
 
   devtools: {
-    enabled: true
+    enabled: true,
   },
 
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
     public: {
-      debugMode: process.env.NUXT_PUBLIC_DEBUG_MODE === 'true'
-    }
+      debugMode: process.env.NUXT_PUBLIC_DEBUG_MODE === 'true',
+    },
   },
 
   routeRules: {
-    '/': { prerender: true }
+    '/': { prerender: true },
   },
 
   compatibilityDate: '2025-01-15',
 
   vite: {
     plugins: [
-      tailwindcss()
-    ]
+      tailwindcss(),
+    ],
   },
 
   eslint: {
     config: {
-      stylistic: true
-    }
+      stylistic: true,
+    },
   },
 
   pwa: {
@@ -55,15 +55,15 @@ export default defineNuxtConfig({
       orientation: 'portrait',
       icons: [
         { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-        { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' }
-      ]
+        { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+      ],
     },
     workbox: {
       navigateFallback: '/',
-      globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}']
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
     },
     client: {
-      installPrompt: true
-    }
-  }
+      installPrompt: true,
+    },
+  },
 })
