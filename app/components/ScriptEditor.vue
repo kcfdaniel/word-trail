@@ -1,65 +1,72 @@
 <script setup lang="ts">
-import type { Script } from '~/composables/useScriptManager'
-
-const props = defineProps<{
-  currentScript: Script | null
-}>()
+import { htmlToPlainText } from '~/utils/richText'
 
 const emit = defineEmits<{
-  update: [id: string, updates: { title?: string, content?: string, contentHtml?: string, isRichText?: boolean }]
   close: []
 }>()
 
+const { currentScript, updateScript } = useScriptManager()
+
 const title = ref('')
 const contentHtml = ref('')
-const isRichText = ref(true)
+const initialTitle = ref('')
+const initialContentHtml = ref('')
 
-// Extract plain text from HTML for word count and fallback
-const getPlainText = (html: string): string => {
-  if (!import.meta.client) return ''
-  const div = document.createElement('div')
-  div.innerHTML = html
-  return div.textContent || div.innerText || ''
-}
+const hasUnsavedChanges = computed(() => {
+  return title.value !== initialTitle.value || contentHtml.value !== initialContentHtml.value
+})
+
+const discardMessage = 'You have unsaved changes. Discard them?'
 
 const wordCount = computed(() => {
-  const text = getPlainText(contentHtml.value)
+  const text = htmlToPlainText(contentHtml.value)
   return text.split(/\s+/).filter(w => w.trim().length > 0).length
 })
 
-// Initialize with current script data
-onMounted(() => {
-  if (props.currentScript) {
-    title.value = props.currentScript.title
-    // Prefer HTML content if available, otherwise use plain text wrapped in paragraph
-    if (props.currentScript.contentHtml) {
-      contentHtml.value = props.currentScript.contentHtml
-      isRichText.value = props.currentScript.isRichText ?? true
-    } else if (props.currentScript.content) {
-      // Convert plain text to HTML (wrap in paragraphs)
-      contentHtml.value = props.currentScript.content
-        .split('\n\n')
-        .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-        .join('')
-      isRichText.value = true
-    }
+const syncDraft = (script: { title: string, contentHtml: string } | null) => {
+  initialTitle.value = script?.title ?? ''
+  initialContentHtml.value = script?.contentHtml ?? ''
+  title.value = initialTitle.value
+  contentHtml.value = initialContentHtml.value
+}
+
+watch(currentScript, (script) => {
+  if (script) {
+    syncDraft(script)
   }
+}, { immediate: true })
+
+const confirmDiscard = () => !hasUnsavedChanges.value || confirm(discardMessage)
+
+const attemptClose = () => {
+  if (confirmDiscard()) {
+    emit('close')
+  }
+}
+
+const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+  if (!hasUnsavedChanges.value) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 
 const save = () => {
-  const plainText = getPlainText(contentHtml.value)
-  if (!plainText.trim() || !props.currentScript) return
+  if (!htmlToPlainText(contentHtml.value).trim() || !currentScript.value) return
 
-  emit('update', props.currentScript.id, {
-    title: title.value || 'Untitled Script',
-    content: plainText, // Store plain text for fuzzy matching compatibility
-    contentHtml: contentHtml.value,
-    isRichText: true
-  })
-  emit('close')
-}
+  const savedTitle = title.value || 'Untitled Script'
+  const savedContentHtml = contentHtml.value
 
-const cancel = () => {
+  updateScript(currentScript.value.id, { title: savedTitle, contentHtml: savedContentHtml })
+  initialTitle.value = savedTitle
+  initialContentHtml.value = savedContentHtml
   emit('close')
 }
 </script>
@@ -74,7 +81,7 @@ const cancel = () => {
       <button
         class="close-button"
         aria-label="Close"
-        @click="emit('close')"
+        @click="attemptClose"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -129,10 +136,24 @@ const cancel = () => {
           </ClientOnly>
         </div>
         <p class="editor-hint">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 16v-4"/>
-            <path d="M12 8h.01"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+            />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
           </svg>
           Tip: Paste from Google Docs to preserve formatting
         </p>
@@ -141,13 +162,13 @@ const cancel = () => {
       <div class="form-actions">
         <button
           class="form-button form-button--secondary"
-          @click="cancel"
+          @click="attemptClose"
         >
           Cancel
         </button>
         <button
           class="form-button form-button--primary"
-          :disabled="!getPlainText(contentHtml).trim()"
+          :disabled="!htmlToPlainText(contentHtml).trim()"
           @click="save"
         >
           Save Changes
@@ -162,6 +183,7 @@ const cancel = () => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   background: var(--surface);
 }
 
@@ -203,6 +225,7 @@ const cancel = () => {
 
 .editor-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 1.5rem;
 }
@@ -260,7 +283,8 @@ const cancel = () => {
 
 .editor-wrapper {
   flex: 1;
-  min-height: 300px;
+  min-height: 0;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -269,22 +293,28 @@ const cancel = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .editor-wrapper :deep(.ck.ck-editor) {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .editor-wrapper :deep(.ck.ck-editor__main) {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .editor-wrapper :deep(.ck.ck-editor__main > .ck-editor__editable) {
   flex: 1;
+  min-height: 18rem;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 .editor-hint {
@@ -297,11 +327,17 @@ const cancel = () => {
 }
 
 .form-actions {
+  position: sticky;
+  bottom: 0;
   display: flex;
   gap: 0.75rem;
   padding-top: 1rem;
+  padding-bottom: 0.25rem;
+  background: var(--surface);
   border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 -1px 0 var(--border-subtle);
   margin-top: auto;
+  z-index: 1;
 }
 
 .form-button {

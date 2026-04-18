@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import type { Script } from '~/composables/useScriptManager'
-import type { MatchResult } from '~/composables/useFuzzyMatch'
+import type { MatchResult } from '~/composables/useSpeechMatch'
+import { useStorage } from '@vueuse/core'
 
 const props = defineProps<{
-  script: Script
   autoStart?: boolean
 }>()
 
@@ -20,84 +19,43 @@ const {
   language,
   toggle: toggleSpeech,
   reset: resetSpeech,
-  setLanguage
+  setLanguage,
 } = useSpeech()
 
-// Persist language selection to localStorage
-const LANGUAGE_STORAGE_KEY = 'wordtrail-language'
+// Persist language selection reactively across views and reloads.
+const languageStorage = useStorage('wordtrail-language', 'en-US', undefined, {
+  listenToStorageChanges: true,
+})
 
-onMounted(() => {
-  const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY)
+watch(languageStorage, (savedLanguage) => {
   if (savedLanguage) {
     setLanguage(savedLanguage)
   }
-})
+}, { immediate: true })
 
 const handleLanguageSelect = (lang: string) => {
   setLanguage(lang)
-  localStorage.setItem(LANGUAGE_STORAGE_KEY, lang)
+  languageStorage.value = lang
   if (isListening.value) {
     resetSpeech()
     toggleSpeech()
   }
 }
 
-const {
-  scriptWords,
-  currentIndex,
-  getProgress,
-  activeWordIndex,
-  setCurrentScript,
-  updateScript,
-  handleMatch: handleMatchLegacy,
-  setPositionAt: setPositionAtLegacy,
-  resetProgress: resetProgressLegacy
-} = useScriptManager()
+const { currentScript } = useScriptManager()
 
-// Rich text highlight system
 const {
-  wordPositions: richTextWordPositions,
-  currentIndex: richTextCurrentIndex,
-  progress: richTextProgress,
-  handleMatch: handleMatchRichText,
-  setPositionAt: setPositionAtRichText,
-  resetProgress: resetProgressRichText,
-  initializeWordIndex,
+  wordPositions,
+  currentIndex,
+  progress,
+  handleMatch,
+  setPositionAt,
+  resetProgress,
   getNormalizedWords,
-  clearAllHighlights
+  clearAllHighlights,
 } = useRichTextHighlight()
 
-// Check if script uses rich text
-const isRichTextMode = computed(() => {
-  return Boolean(props.script.isRichText && props.script.contentHtml)
-})
-
-// Get HTML content for rich text teleprompter
-const htmlContent = computed(() => {
-  if (props.script.contentHtml) {
-    return props.script.contentHtml
-  }
-  // Fallback: convert plain text to HTML
-  return props.script.content
-    .split('\n\n')
-    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-    .join('')
-})
-
-// Reference to the teleprompter component
-const richTextTeleprompterRef = ref<{
-  setPositionAt: (index: number) => void
-  resetProgress: () => void
-  wordPositions: { index: number; text: string; normalizedText: string }[]
-  currentIndex: number
-} | null>(null)
-
-// Set the script when component mounts (for legacy mode)
 onMounted(() => {
-  if (!isRichTextMode.value) {
-    setCurrentScript(props.script)
-  }
-
   // Auto-start listening if autoStart prop is true
   if (props.autoStart && isSupported.value) {
     setTimeout(() => {
@@ -108,28 +66,15 @@ onMounted(() => {
   }
 })
 
-// Update if script prop changes
-watch(() => props.script, (newScript) => {
-  if (!isRichTextMode.value) {
-    setCurrentScript(newScript)
-  }
-})
-
-const { createMatcher, splitWords } = useFuzzyMatch()
+const { createMatcher, splitWords } = useSpeechMatch()
 const { isDebugEnabled, showDebugPanel, toggleDebugPanel } = useDebugMode()
 
-// Create optimized matcher based on mode
 const matcher = computed(() => {
-  if (isRichTextMode.value && getNormalizedWords.value.length > 0) {
-    // Create words array compatible with useFuzzyMatch
-    const words = getNormalizedWords.value.map(w => ({
-      id: w.id,
-      text: w.text,
-      state: 'pending' as const
-    }))
-    return createMatcher(words)
-  }
-  return createMatcher(scriptWords.value)
+  const words = getNormalizedWords.value.map(w => ({
+    id: w.id,
+    text: w.text,
+  }))
+  return createMatcher(words)
 })
 
 const showEditor = ref(false)
@@ -144,49 +89,14 @@ const allSpokenWords = computed(() => {
   return [...finalWords, ...interimWords]
 })
 
-// Current index for progress tracking (mode-aware)
-const currentProgressIndex = computed(() => {
-  return isRichTextMode.value ? richTextCurrentIndex.value : currentIndex.value
-})
-
-// Progress percentage (mode-aware)
-const progressPercentage = computed(() => {
-  return isRichTextMode.value ? richTextProgress.value : getProgress.value
-})
-
-// Word count for debug panel
-const totalWordCount = computed(() => {
-  return isRichTextMode.value ? richTextWordPositions.value.length : scriptWords.value.length
-})
-
 // Watch for any transcript changes (interim or final)
 watch([transcript, interimTranscript], () => {
-  const words = isRichTextMode.value
-    ? getNormalizedWords.value
-    : scriptWords.value
+  if (wordPositions.value.length === 0 || allSpokenWords.value.length === 0) return
 
-  if (words.length === 0) return
-
-  const spokenWords = allSpokenWords.value
-  if (spokenWords.length === 0) return
-
-  const currentIdx = isRichTextMode.value
-    ? richTextCurrentIndex.value
-    : currentIndex.value
-
-  // Use pre-computed matcher for O(1) lookups
-  const match = matcher.value.findBestMatch(
-    spokenWords,
-    currentIdx
-  )
-
+  const match = matcher.value.findBestMatch(allSpokenWords.value, currentIndex.value)
   if (match) {
     lastMatch.value = match
-    if (isRichTextMode.value) {
-      handleMatchRichText(match.index)
-    } else {
-      handleMatchLegacy(match.index)
-    }
+    handleMatch(match.index)
   }
 })
 
@@ -199,11 +109,7 @@ const handleToggleListening = () => {
 }
 
 const handleReset = () => {
-  if (isRichTextMode.value) {
-    resetProgressRichText()
-  } else {
-    resetProgressLegacy()
-  }
+  resetProgress()
   resetSpeech()
 }
 
@@ -216,11 +122,7 @@ const handleCloseEditor = () => {
 }
 
 const handleWordClick = (wordId: number) => {
-  if (isRichTextMode.value) {
-    setPositionAtRichText(wordId)
-  } else {
-    setPositionAtLegacy(wordId)
-  }
+  setPositionAt(wordId)
   resetSpeech()
   // Auto-start listening after clicking on a word to navigate
   if (isSupported.value) {
@@ -232,32 +134,16 @@ const handleWordClick = (wordId: number) => {
   }
 }
 
-const handleUpdateScript = (id: string, updates: { title?: string, content?: string, contentHtml?: string, isRichText?: boolean }) => {
-  updateScript(id, updates)
-}
-
-// Handle initialization of rich text word index
-const handleRichTextInitialized = (wordCount: number) => {
-  console.log(`Rich text initialized with ${wordCount} words`)
-}
-
 const goBack = () => {
-  // Stop listening when closing
   if (isListening.value) {
     toggleSpeech()
   }
-  // Clear highlights
-  if (isRichTextMode.value) {
-    clearAllHighlights()
-  }
+  clearAllHighlights()
   emit('close')
 }
 
-// Clean up on unmount
 onUnmounted(() => {
-  if (isRichTextMode.value) {
-    clearAllHighlights()
-  }
+  clearAllHighlights()
 })
 </script>
 
@@ -289,10 +175,7 @@ onUnmounted(() => {
           </svg>
         </button>
         <span class="current-script-name">
-          {{ script.title }}
-        </span>
-        <span v-if="isRichTextMode" class="rich-text-badge">
-          Rich Text
+          {{ currentScript?.title }}
         </span>
       </div>
 
@@ -339,27 +222,9 @@ onUnmounted(() => {
     <!-- Main Content Area -->
     <div class="app-content">
       <main class="app-main">
-        <!-- Rich Text Mode -->
         <RichTextTeleprompter
-          v-if="isRichTextMode"
-          ref="richTextTeleprompterRef"
-          :html-content="htmlContent"
-          :progress="progressPercentage"
-          :is-listening="isListening"
-          :show-debug="showDebugPanel"
-          @toggle-listening="handleToggleListening"
-          @reset="handleReset"
-          @edit="handleEdit"
-          @word-click="handleWordClick"
-          @initialized="handleRichTextInitialized"
-        />
-
-        <!-- Legacy Plain Text Mode -->
-        <ScriptReader
-          v-else
-          :words="scriptWords"
-          :active-index="activeWordIndex"
-          :progress="progressPercentage"
+          :html-content="currentScript?.contentHtml ?? ''"
+          :progress="progress"
           :is-listening="isListening"
           :show-debug="showDebugPanel"
           @toggle-listening="handleToggleListening"
@@ -416,10 +281,10 @@ onUnmounted(() => {
             :transcript="transcript"
             :interim-transcript="interimTranscript"
             :is-listening="isListening"
-            :current-index="currentProgressIndex"
+            :current-index="currentIndex"
             :last-match="lastMatch"
-            :words-count="totalWordCount"
-            :progress="progressPercentage"
+            :words-count="wordPositions.length"
+            :progress="progress"
             :sequence-length="allSpokenWords.length"
           />
         </aside>
@@ -433,8 +298,6 @@ onUnmounted(() => {
         class="editor-overlay"
       >
         <ScriptEditor
-          :current-script="script"
-          @update="handleUpdateScript"
           @close="handleCloseEditor"
         />
       </div>
@@ -499,19 +362,6 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
-}
-
-.rich-text-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.5rem;
-  background: var(--accent-subtle);
-  color: var(--accent);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  border-radius: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
 }
 
 .header-right {
@@ -637,10 +487,6 @@ onUnmounted(() => {
   }
 
   .current-script-name {
-    display: none;
-  }
-
-  .rich-text-badge {
     display: none;
   }
 

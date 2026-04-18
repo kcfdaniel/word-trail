@@ -13,9 +13,9 @@ interface PrecomputedWord {
 }
 
 interface SignificantWord {
-  word: string      // already normalized
+  word: string // already normalized
   originalId: number
-  arrayIdx: number  // index in precomputed.words
+  arrayIdx: number // index in precomputed.words
 }
 
 interface PrecomputedScript {
@@ -34,7 +34,8 @@ const binarySearchLastLE = <T>(arr: T[], target: number, key: (item: T) => numbe
     if (key(arr[mid]!) <= target) {
       result = mid
       lo = mid + 1
-    } else {
+    }
+    else {
       hi = mid - 1
     }
   }
@@ -69,12 +70,14 @@ const splitWords = (text: string): string[] => {
         currentWord = ''
       }
       results.push(char)
-    } else if (/\s/.test(char)) {
+    }
+    else if (/\s/.test(char)) {
       if (currentWord.trim()) {
         results.push(currentWord.trim())
         currentWord = ''
       }
-    } else {
+    }
+    else {
       currentWord += char
     }
   }
@@ -91,7 +94,7 @@ const splitWords = (text: string): string[] => {
  */
 const STOP_WORDS = new Set([
   'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'with', 'in',
-  'is', 'am', 'are', 'was', 'were', 'be', 'being', 'been'
+  'is', 'am', 'are', 'was', 'were', 'be', 'being', 'been',
 ])
 
 /**
@@ -143,7 +146,7 @@ interface AlignmentResult {
 
 const alignSequencesDP = (
   spokenNormalized: string[],
-  scriptWindow: PrecomputedWord[]
+  scriptWindow: PrecomputedWord[],
 ): AlignmentResult => {
   const n = spokenNormalized.length
   const m = scriptWindow.length
@@ -200,9 +203,11 @@ const alignSequencesDP = (
       }
       i--
       j--
-    } else if (dp[i]![j] === dp[i - 1]![j]! + GAP_PENALTY) {
+    }
+    else if (dp[i]![j] === dp[i - 1]![j]! + GAP_PENALTY) {
       i--
-    } else {
+    }
+    else {
       j--
     }
   }
@@ -229,7 +234,7 @@ const findPhraseMatch = (
   lastSigIdx: number,
   expectedNextOriginal: number,
   maxPhraseLen: number,
-  config: MatchConfig
+  config: MatchConfig,
 ): { endId: number, length: number } | null => {
   const phraseLenMax = Math.min(spokenSignificant.length, maxPhraseLen)
   let best: { score: number, endId: number, length: number } | null = null
@@ -286,16 +291,16 @@ const precomputeScript = (scriptWords: { id: number, text: string }[]): Precompu
   scriptWords.forEach((sw, idx) => {
     const normalized = normalizeWord(sw.text)
     words.push({
-      id: sw.id,  // Note: id === idx for sequential IDs
+      id: sw.id, // Note: id === idx for sequential IDs
       text: sw.text,
-      normalized
+      normalized,
     })
 
     if (!isStopWordNormalized(normalized)) {
       significant.push({
         word: normalized,
         originalId: sw.id,
-        arrayIdx: idx
+        arrayIdx: idx,
       })
     }
   })
@@ -303,7 +308,7 @@ const precomputeScript = (scriptWords: { id: number, text: string }[]): Precompu
   return { words, significant }
 }
 
-export const useFuzzyMatch = () => {
+export const useSpeechMatch = () => {
   // Configuration - matching reference.js
   const MAX_SPOKEN_WORDS = 20
   const MAX_PHRASE_LEN = 5
@@ -311,7 +316,7 @@ export const useFuzzyMatch = () => {
   const WINDOW_AHEAD = 15
   const MAX_JUMP_SINGLE_WORD = 5
   const MIN_LEN_FOR_LONG_JUMP = 2
-  const MAX_FORWARD_ORIGINAL = 14
+  const MAX_FORWARD_ORIGINAL = 20 // original 14
   const MAX_JUMP_SINGLE_ORIGINAL = 6
 
   /**
@@ -329,7 +334,7 @@ export const useFuzzyMatch = () => {
      */
     const findBestMatch = (
       spokenWords: string[],
-      currentIndex: number
+      currentIndex: number,
     ): MatchResult | null => {
       if (spokenWords.length === 0 || precomputed.words.length === 0) return null
 
@@ -355,8 +360,8 @@ export const useFuzzyMatch = () => {
         }
         const wordAfterNext = precomputed.words[nextIdx + 1]
         if (nextWord && wordAfterNext) {
-          if (spokenNormalized[0] === nextWord.normalized &&
-            spokenNormalized[1] === wordAfterNext.normalized) {
+          if (spokenNormalized[0] === nextWord.normalized
+            && spokenNormalized[1] === wordAfterNext.normalized) {
             return { index: nextIdx + 1, word: wordAfterNext.text }
           }
         }
@@ -402,7 +407,7 @@ export const useFuzzyMatch = () => {
         maxJumpSingleWord: MAX_JUMP_SINGLE_WORD,
         maxJumpSingleOriginal: MAX_JUMP_SINGLE_ORIGINAL,
         maxForwardOriginal: MAX_FORWARD_ORIGINAL,
-        minLenForLongJump: MIN_LEN_FOR_LONG_JUMP
+        minLenForLongJump: MIN_LEN_FOR_LONG_JUMP,
       }
 
       const best = findPhraseMatch(
@@ -413,7 +418,7 @@ export const useFuzzyMatch = () => {
         lastSigIdx,
         expectedNextOriginal,
         MAX_PHRASE_LEN,
-        matchConfig
+        matchConfig,
       )
 
       // If phrase matching found a result, return it
@@ -421,7 +426,7 @@ export const useFuzzyMatch = () => {
         const matchedWord = precomputed.words[best.endId]
         return {
           index: best.endId,
-          word: matchedWord?.text ?? ''
+          word: matchedWord?.text ?? '',
         }
       }
 
@@ -435,7 +440,7 @@ export const useFuzzyMatch = () => {
 
       const { lastMatchedArrayIdx, score, matchCount } = alignSequencesDP(
         limitedSpokenNormalized,
-        scriptWindow
+        scriptWindow,
       )
 
       if (lastMatchedArrayIdx < 0) return null
@@ -451,13 +456,13 @@ export const useFuzzyMatch = () => {
       if (matchCount <= 1 && jumpDistance > MAX_JUMP_SINGLE_WORD) return null
 
       if (
-        lastMatchedId > currentIndex &&
-        matchRatio >= MIN_MATCH_RATIO &&
-        avgScorePerWord >= MIN_SCORE_PER_WORD
+        lastMatchedId > currentIndex
+        && matchRatio >= MIN_MATCH_RATIO
+        && avgScorePerWord >= MIN_SCORE_PER_WORD
       ) {
         return {
           index: lastMatchedId,
-          word: scriptWindow[lastMatchedArrayIdx]!.text
+          word: scriptWindow[lastMatchedArrayIdx]!.text,
         }
       }
 
@@ -470,6 +475,6 @@ export const useFuzzyMatch = () => {
   return {
     createMatcher,
     normalizeWord,
-    splitWords
+    splitWords,
   }
 }

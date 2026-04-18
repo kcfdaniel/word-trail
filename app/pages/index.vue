@@ -1,34 +1,34 @@
 <script setup lang="ts">
-import type { Script } from '~/composables/useScriptManager'
+import { plainTextToHtml } from '~/utils/richText'
 
 const router = useRouter()
 
 const {
   scripts,
+  currentScript,
   isLoaded,
-  createScript
+  createScript,
+  setCurrentScript,
 } = useScriptManager()
 
-// Script reader overlay state
-const selectedScript = ref<Script | null>(null)
 const autoStartListening = ref(false)
 
 // Redirect to scripts list if user has scripts
 watch([isLoaded, scripts], ([loaded, scriptsList]) => {
-  if (loaded && scriptsList.length > 0 && !selectedScript.value) {
+  if (loaded && scriptsList.length > 0 && !currentScript.value) {
     router.replace('/scripts')
   }
 }, { immediate: true })
 
 // Handle start reading from welcome landing
-const handleStartReading = (scriptTitle: string, scriptContent: string) => {
-  const newScript = createScript(scriptTitle, scriptContent)
-  selectedScript.value = newScript
+const handleStartReading = (scriptTitle: string, scriptContent: string, _language: string) => {
+  const newScript = createScript(scriptTitle, plainTextToHtml(scriptContent))
+  setCurrentScript(newScript)
   autoStartListening.value = true
 }
 
 const closeReader = () => {
-  selectedScript.value = null
+  setCurrentScript(null)
   autoStartListening.value = false
   // After closing reader, redirect to scripts list
   router.push('/scripts')
@@ -38,14 +38,20 @@ const closeReader = () => {
 <template>
   <div class="landing-page">
     <!-- Loading State -->
-    <Transition name="fade" mode="out-in">
-      <div v-if="!isLoaded" class="loading-state">
+    <Transition
+      name="fade"
+      mode="out-in"
+    >
+      <div
+        v-if="!isLoaded"
+        class="loading-state"
+      >
         <div class="loader-content">
           <img
             src="/app-logo.png"
             alt="WordTrail"
             class="loader-logo"
-          />
+          >
           <div class="loader-dots">
             <span class="loader-dot" />
             <span class="loader-dot" />
@@ -64,8 +70,7 @@ const closeReader = () => {
     <!-- Script Reader Overlay -->
     <Transition name="slide-right">
       <ScriptReaderOverlay
-        v-if="selectedScript"
-        :script="selectedScript"
+        v-if="currentScript"
         :auto-start="autoStartListening"
         @close="closeReader"
       />

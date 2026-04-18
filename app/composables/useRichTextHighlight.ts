@@ -26,7 +26,7 @@ export const isHighlightApiSupported = (): boolean => {
 }
 
 /**
- * Normalize word for matching (same logic as useFuzzyMatch)
+ * Normalize word for matching (same logic as useSpeechMatch)
  */
 const normalizeWord = (word: string): string => {
   return word
@@ -67,8 +67,8 @@ export const buildWordIndex = (container: HTMLElement): WordPosition[] => {
           return NodeFilter.FILTER_REJECT
         }
         return NodeFilter.FILTER_ACCEPT
-      }
-    }
+      },
+    },
   )
 
   let textNode: Text | null
@@ -87,7 +87,7 @@ export const buildWordIndex = (container: HTMLElement): WordPosition[] => {
         continue
       }
 
-      let wordStart = i
+      const wordStart = i
       let wordText = ''
 
       if (isCJK(char)) {
@@ -99,7 +99,8 @@ export const buildWordIndex = (container: HTMLElement): WordPosition[] => {
           wordText += text[i]
           i++
         }
-      } else {
+      }
+      else {
         // Non-CJK - accumulate until whitespace or CJK
         while (i < text.length && !/\s/.test(text[i]!) && !isCJK(text[i]!)) {
           wordText += text[i]
@@ -116,7 +117,7 @@ export const buildWordIndex = (container: HTMLElement): WordPosition[] => {
             normalizedText: normalized,
             node: textNode,
             start: wordStart,
-            end: wordStart + wordText.length
+            end: wordStart + wordText.length,
           })
           globalIndex++
         }
@@ -127,25 +128,35 @@ export const buildWordIndex = (container: HTMLElement): WordPosition[] => {
   return words
 }
 
+// Module-level singleton state so every caller of useRichTextHighlight()
+// shares the same wordPositions / currentIndex. Without this, the teleprompter
+// component builds the index into its own instance while the reader overlay's
+// instance stays empty — matching and highlighting silently no-op.
+const scrollContainerRef = ref<HTMLElement | null>(null)
+const indexContainerRef = ref<HTMLElement | null>(null)
+const wordPositions = ref<WordPosition[]>([])
+const currentIndex = ref(-1)
+const isSupported = ref(false)
+let supportedInitialized = false
+
+const ACTIVE_HIGHLIGHT = 'wordtrail-active'
+const COMPLETED_HIGHLIGHT = 'wordtrail-completed'
+
 /**
  * Main composable for rich text highlighting
  */
 export const useRichTextHighlight = () => {
-  const containerRef = ref<HTMLElement | null>(null)
-  const wordPositions = ref<WordPosition[]>([])
-  const currentIndex = ref(-1)
-  const isSupported = ref(isHighlightApiSupported())
-
-  // Highlight names
-  const ACTIVE_HIGHLIGHT = 'wordtrail-active'
-  const COMPLETED_HIGHLIGHT = 'wordtrail-completed'
-  const PENDING_HIGHLIGHT = 'wordtrail-pending'
+  if (!supportedInitialized && typeof window !== 'undefined') {
+    isSupported.value = isHighlightApiSupported()
+    supportedInitialized = true
+  }
 
   /**
    * Initialize word index from container
    */
-  const initializeWordIndex = (container: HTMLElement) => {
-    containerRef.value = container
+  const initializeWordIndex = (container: HTMLElement, scrollContainer: HTMLElement = container) => {
+    indexContainerRef.value = container
+    scrollContainerRef.value = scrollContainer
     wordPositions.value = buildWordIndex(container)
     currentIndex.value = -1
     clearAllHighlights()
@@ -159,7 +170,6 @@ export const useRichTextHighlight = () => {
 
     CSS.highlights.delete(ACTIVE_HIGHLIGHT)
     CSS.highlights.delete(COMPLETED_HIGHLIGHT)
-    CSS.highlights.delete(PENDING_HIGHLIGHT)
   }
 
   /**
@@ -182,10 +192,12 @@ export const useRichTextHighlight = () => {
 
         if (idx < currentIndex.value) {
           completedRanges.push(range)
-        } else if (idx === currentIndex.value) {
+        }
+        else if (idx === currentIndex.value) {
           activeRanges.push(range)
         }
-      } catch (e) {
+      }
+      catch (e) {
         // Range might be invalid if DOM changed
         console.warn('Failed to create range for word:', word.text, e)
       }
@@ -252,7 +264,7 @@ export const useRichTextHighlight = () => {
       range.setEnd(word.node, word.end)
 
       const rect = range.getBoundingClientRect()
-      const container = containerRef.value
+      const container = scrollContainerRef.value
 
       if (container) {
         const containerRect = container.getBoundingClientRect()
@@ -260,10 +272,11 @@ export const useRichTextHighlight = () => {
 
         container.scrollTo({
           top: scrollTarget,
-          behavior: 'smooth'
+          behavior: 'smooth',
         })
       }
-    } catch (e) {
+    }
+    catch {
       // Fallback: no scrolling if range is invalid
     }
   }
@@ -272,7 +285,7 @@ export const useRichTextHighlight = () => {
    * Get word at click position
    */
   const getWordAtPoint = (x: number, y: number): WordPosition | null => {
-    if (!containerRef.value) return null
+    if (!indexContainerRef.value) return null
 
     // Use caretPositionFromPoint or caretRangeFromPoint
     let range: Range | null = null
@@ -284,7 +297,8 @@ export const useRichTextHighlight = () => {
         range.setStart(pos.offsetNode, pos.offset)
         range.setEnd(pos.offsetNode, pos.offset)
       }
-    } else if (document.caretRangeFromPoint) {
+    }
+    else if (document.caretRangeFromPoint) {
       range = document.caretRangeFromPoint(x, y)
     }
 
@@ -295,9 +309,9 @@ export const useRichTextHighlight = () => {
 
     // Find which word contains this position
     for (const word of wordPositions.value) {
-      if (word.node === clickedNode &&
-          clickedOffset >= word.start &&
-          clickedOffset <= word.end) {
+      if (word.node === clickedNode
+        && clickedOffset >= word.start
+        && clickedOffset <= word.end) {
         return word
       }
     }
@@ -321,18 +335,12 @@ export const useRichTextHighlight = () => {
     return wordPositions.value.map(w => ({
       id: w.index,
       text: w.text,
-      normalizedText: w.normalizedText
+      normalizedText: w.normalizedText,
     }))
-  })
-
-  // Clean up on unmount
-  onUnmounted(() => {
-    clearAllHighlights()
   })
 
   return {
     // State
-    containerRef,
     wordPositions: readonly(wordPositions),
     currentIndex: readonly(currentIndex),
     progress,
@@ -346,6 +354,6 @@ export const useRichTextHighlight = () => {
     setPositionAt,
     resetProgress,
     getWordAtPoint,
-    clearAllHighlights
+    clearAllHighlights,
   }
 }

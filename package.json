@@ -10,8 +10,8 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
     "test:unit": "vitest --project unit",
     "test:nuxt": "vitest --project nuxt",
@@ -31,9 +31,9 @@
     "@tailwindcss/vite": "^4.1.18",
     "@unhead/vue": "^2.1.2",
     "@vite-pwa/nuxt": "1.1.0",
+    "@vueuse/core": "^14.2.1",
     "ckeditor5": "^47.5.0",
-    "fuzzysort": "^3.1.0",
-    "nuxt": "^4.2.2",
+    "nuxt": "^4.4.2",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {

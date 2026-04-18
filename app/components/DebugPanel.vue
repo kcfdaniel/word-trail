@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MatchResult } from '~/composables/useFuzzyMatch'
+import type { MatchResult } from '~/composables/useSpeechMatch'
 
 const props = defineProps<{
   transcript: string

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
 import { Ckeditor } from '@ckeditor/ckeditor5-vue'
 import {
   ClassicEditor,
@@ -22,16 +21,28 @@ import {
 } from 'ckeditor5'
 import 'ckeditor5/ckeditor5.css'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: string
   placeholder?: string
-}>()
+  readOnly?: boolean
+  showToolbar?: boolean
+}>(), {
+  readOnly: false,
+  showToolbar: true,
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
+  'ready': [editor: { ui?: { getEditableElement?: (rootName?: string) => HTMLElement | undefined } }]
 }>()
 
 const data = ref(props.modelValue)
+
+watch(() => props.modelValue, (value) => {
+  if (value !== data.value) {
+    data.value = value
+  }
+})
 
 const config = computed(() => ({
   licenseKey: 'GPL',
@@ -81,7 +92,6 @@ const config = computed(() => ({
   },
   fontSize: {
     options: ['tiny', 'small', 'default', 'big', 'huge'],
-    supportAllValues: true,
   },
   placeholder: props.placeholder || 'Start typing or paste your script here...',
   htmlSupport: {
@@ -99,14 +109,28 @@ const config = computed(() => ({
 const handleInput = (newData: string) => {
   emit('update:modelValue', newData)
 }
+
+const handleReady = (editor: any) => {
+  if (props.readOnly && typeof editor?.enableReadOnlyMode === 'function') {
+    editor.enableReadOnlyMode('rich-text-editor-readonly')
+  }
+  emit('ready', editor)
+}
 </script>
 
 <template>
-  <div class="rich-text-editor">
+  <div
+    class="rich-text-editor"
+    :class="{
+      'rich-text-editor--read-only': props.readOnly,
+      'rich-text-editor--no-toolbar': props.showToolbar === false,
+    }"
+  >
     <Ckeditor
       v-model="data"
       :editor="ClassicEditor"
       :config="config"
+      @ready="handleReady"
       @update:model-value="handleInput"
     />
   </div>
@@ -162,6 +186,18 @@ const handleInput = (newData: string) => {
   border-color: var(--border-subtle);
   border-radius: 0.5rem 0.5rem 0 0;
   padding: 0.5rem;
+}
+
+.rich-text-editor--no-toolbar .ck.ck-toolbar {
+  display: none;
+}
+
+.rich-text-editor--no-toolbar .ck.ck-editor__main > .ck-editor__editable {
+  border-radius: 0.5rem;
+}
+
+.rich-text-editor--read-only .ck.ck-editor__main > .ck-editor__editable {
+  cursor: default;
 }
 
 .rich-text-editor .ck.ck-toolbar .ck-toolbar__separator {

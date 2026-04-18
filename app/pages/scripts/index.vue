@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Script } from '~/composables/useScriptManager'
+import { htmlToPlainText } from '~/utils/richText'
 
 const router = useRouter()
 
@@ -9,7 +10,8 @@ const {
   isLoaded,
   createScript,
   updateScript,
-  deleteScript
+  deleteScript,
+  setCurrentScript,
 } = useScriptManager()
 
 // Redirect to landing page if no scripts
@@ -23,13 +25,18 @@ const searchQuery = ref('')
 const mode = ref<'list' | 'edit' | 'new'>('list')
 const editingScript = ref<Script | null>(null)
 const title = ref('')
-const content = ref('')
+const contentHtml = ref('')
+const initialTitle = ref('')
+const initialContentHtml = ref('')
 
-// Script reader overlay state
-const selectedScript = ref<Script | null>(null)
+const hasUnsavedChanges = computed(() => {
+  return title.value !== initialTitle.value || contentHtml.value !== initialContentHtml.value
+})
+
+const discardMessage = 'You have unsaved changes. Discard them?'
 
 const wordCount = computed(() => {
-  return content.value.split(/\s+/).filter(w => w.trim().length > 0).length
+  return htmlToPlainText(contentHtml.value).split(/\s+/).filter(w => w.trim().length > 0).length
 })
 
 // Filter and sort scripts: search by title, sort by updatedAt descending
@@ -40,7 +47,7 @@ const filteredScripts = computed(() => {
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase().trim()
     result = result.filter(script =>
-      script.title.toLowerCase().includes(query)
+      script.title.toLowerCase().includes(query),
     )
   }
 
@@ -52,38 +59,56 @@ const filteredScripts = computed(() => {
 
 const openNew = () => {
   mode.value = 'new'
-  title.value = ''
-  content.value = ''
   editingScript.value = null
+  setCurrentScript(null)
+  initialTitle.value = ''
+  initialContentHtml.value = ''
+  title.value = ''
+  contentHtml.value = ''
 }
 
 const openEdit = (script: Script) => {
   mode.value = 'edit'
   editingScript.value = script
+  setCurrentScript(script)
+  initialTitle.value = script.title
+  initialContentHtml.value = script.contentHtml
   title.value = script.title
-  content.value = script.content
+  contentHtml.value = script.contentHtml
 }
 
 const save = () => {
-  if (!content.value.trim()) return
+  if (!htmlToPlainText(contentHtml.value).trim()) return
 
+  const savedTitle = title.value || 'Untitled Script'
   if (mode.value === 'new') {
-    createScript(title.value || 'Untitled Script', content.value)
-  } else if (editingScript.value) {
+    createScript(savedTitle, contentHtml.value)
+  }
+  else if (editingScript.value) {
     updateScript(editingScript.value.id, {
-      title: title.value || 'Untitled Script',
-      content: content.value
+      title: savedTitle,
+      contentHtml: contentHtml.value,
     })
   }
 
+  initialTitle.value = savedTitle
+  initialContentHtml.value = contentHtml.value
   mode.value = 'list'
 }
 
+const confirmDiscard = () => {
+  if (!hasUnsavedChanges.value) return true
+  return confirm(discardMessage)
+}
+
 const cancel = () => {
+  if (!confirmDiscard()) return
   mode.value = 'list'
   editingScript.value = null
   title.value = ''
-  content.value = ''
+  contentHtml.value = ''
+  initialTitle.value = ''
+  initialContentHtml.value = ''
 }
 
 const confirmDelete = (script: Script) => {
@@ -92,35 +117,57 @@ const confirmDelete = (script: Script) => {
   }
 }
 
-const selectAndNavigate = (script: Script) => {
-  selectedScript.value = script
-}
-
-const closeReader = () => {
-  selectedScript.value = null
-}
-
 const formatDate = (timestamp: number) => {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
-    minute: '2-digit'
+    minute: '2-digit',
   }).format(new Date(timestamp))
 }
+
+const scriptPreview = (script: Script) => {
+  const text = htmlToPlainText(script.contentHtml)
+  return `${text.slice(0, 100)}${text.length > 100 ? '...' : ''}`
+}
+
+const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+  if (!hasUnsavedChanges.value) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
+
+onBeforeRouteLeave(() => {
+  if (confirmDiscard()) return true
+  return false
+})
 </script>
 
 <template>
   <div class="scripts-page">
     <!-- Loading State -->
-    <Transition name="fade" mode="out-in">
-      <div v-if="!isLoaded" class="loading-state">
+    <Transition
+      name="fade"
+      mode="out-in"
+    >
+      <div
+        v-if="!isLoaded"
+        class="loading-state"
+      >
         <div class="loader-content">
           <img
             src="/app-logo.png"
             alt="WordTrail"
             class="loader-logo"
-          />
+          >
           <div class="loader-dots">
             <span class="loader-dot" />
             <span class="loader-dot" />
@@ -129,7 +176,10 @@ const formatDate = (timestamp: number) => {
         </div>
       </div>
 
-      <div v-else class="page-loaded">
+      <div
+        v-else
+        class="page-loaded"
+      >
         <!-- Header -->
         <header class="page-header">
           <div class="header-left">
@@ -137,7 +187,7 @@ const formatDate = (timestamp: number) => {
               src="/app-logo.png"
               alt="WordTrail"
               class="app-logo"
-            />
+            >
           </div>
         </header>
 
@@ -150,95 +200,14 @@ const formatDate = (timestamp: number) => {
 
         <!-- List View -->
         <div class="page-content">
-      <!-- Search and New Button -->
-      <div class="toolbar">
-        <div class="search-box">
-          <svg
-            class="search-icon"
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle
-              cx="11"
-              cy="11"
-              r="8"
-            />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          <input
-            v-model="searchQuery"
-            type="text"
-            class="search-input"
-            placeholder="Search scripts..."
-          >
-        </div>
-        <button
-          class="new-button"
-          @click="openNew"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M5 12h14" />
-            <path d="M12 5v14" />
-          </svg>
-          New
-        </button>
-      </div>
-
-      <!-- Scripts List -->
-      <div
-        v-if="filteredScripts.length === 0 && searchQuery"
-        class="empty-state"
-      >
-        <p>No scripts matching "{{ searchQuery }}"</p>
-      </div>
-
-      <div
-        v-else
-        class="script-list"
-      >
-        <div
-          v-for="script in filteredScripts"
-          :key="script.id"
-          class="script-item"
-          :class="{ 'script-item--active': currentScript?.id === script.id }"
-          @click="selectAndNavigate(script)"
-        >
-          <div class="script-item-content">
-            <h3 class="script-item-title">
-              {{ script.title }}
-            </h3>
-            <p class="script-item-preview">
-              {{ script.content.slice(0, 100) }}{{ script.content.length > 100 ? '...' : '' }}
-            </p>
-            <span class="script-item-date">{{ formatDate(script.updatedAt) }}</span>
-          </div>
-          <div class="script-item-actions">
-            <button
-              class="action-button"
-              title="Edit"
-              @click.stop="openEdit(script)"
-            >
+          <!-- Search and New Button -->
+          <div class="toolbar">
+            <div class="search-box">
               <svg
+                class="search-icon"
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -246,18 +215,28 @@ const formatDate = (timestamp: number) => {
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="8"
+                />
+                <path d="m21 21-4.3-4.3" />
               </svg>
-            </button>
+              <input
+                v-model="searchQuery"
+                type="text"
+                class="search-input"
+                placeholder="Search scripts..."
+              >
+            </div>
             <button
-              class="action-button action-button--danger"
-              title="Delete"
-              @click.stop="confirmDelete(script)"
+              class="new-button"
+              @click="openNew"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -265,14 +244,85 @@ const formatDate = (timestamp: number) => {
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <path d="M3 6h18" />
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
               </svg>
+              New
             </button>
           </div>
-        </div>
-      </div>
+
+          <!-- Scripts List -->
+          <div
+            v-if="filteredScripts.length === 0 && searchQuery"
+            class="empty-state"
+          >
+            <p>No scripts matching "{{ searchQuery }}"</p>
+          </div>
+
+          <div
+            v-else
+            class="script-list"
+          >
+            <div
+              v-for="script in filteredScripts"
+              :key="script.id"
+              class="script-item"
+              :class="{ 'script-item--active': currentScript?.id === script.id }"
+              @click="setCurrentScript(script)"
+            >
+              <div class="script-item-content">
+                <h3 class="script-item-title">
+                  {{ script.title }}
+                </h3>
+                <p class="script-item-preview">
+                  {{ scriptPreview(script) }}
+                </p>
+                <span class="script-item-date">{{ formatDate(script.updatedAt) }}</span>
+              </div>
+              <div class="script-item-actions">
+                <button
+                  class="action-button"
+                  title="Edit"
+                  @click.stop="openEdit(script)"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                  </svg>
+                </button>
+                <button
+                  class="action-button action-button--danger"
+                  title="Delete"
+                  @click.stop="confirmDelete(script)"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </Transition>
@@ -332,12 +382,20 @@ const formatDate = (timestamp: number) => {
               Script Content
               <span class="word-count">{{ wordCount }} words</span>
             </label>
-            <textarea
-              id="script-content"
-              v-model="content"
-              class="form-textarea"
-              placeholder="Paste or type your script here..."
-            />
+            <div class="editor-wrapper">
+              <ClientOnly>
+                <RichTextEditor
+                  v-model="contentHtml"
+                  placeholder="Paste or type your script here..."
+                />
+                <template #fallback>
+                  <div class="editor-loading">
+                    <div class="editor-loading__spinner" />
+                    <span>Loading editor...</span>
+                  </div>
+                </template>
+              </ClientOnly>
+            </div>
           </div>
 
           <div class="form-actions">
@@ -349,7 +407,7 @@ const formatDate = (timestamp: number) => {
             </button>
             <button
               class="form-button form-button--primary"
-              :disabled="!content.trim()"
+              :disabled="!htmlToPlainText(contentHtml).trim()"
               @click="save"
             >
               {{ mode === 'new' ? 'Create Script' : 'Save Changes' }}
@@ -362,9 +420,8 @@ const formatDate = (timestamp: number) => {
     <!-- Script Reader Overlay -->
     <Transition name="slide-right">
       <ScriptReaderOverlay
-        v-if="selectedScript"
-        :script="selectedScript"
-        @close="closeReader"
+        v-if="currentScript"
+        @close="setCurrentScript(null)"
       />
     </Transition>
   </div>
@@ -744,34 +801,82 @@ const formatDate = (timestamp: number) => {
   box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
-.form-textarea {
+.editor-wrapper {
   flex: 1;
-  width: 100%;
-  min-height: 200px;
-  padding: 1rem;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-wrapper :deep(.rich-text-editor) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.editor-wrapper :deep(.ck.ck-editor) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.editor-wrapper :deep(.ck.ck-editor__main) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.editor-wrapper :deep(.ck.ck-editor__main > .ck-editor__editable) {
+  flex: 1;
+  min-height: 18rem;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.editor-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 300px;
   background: var(--input-bg);
   border: 1px solid var(--border-subtle);
   border-radius: 0.5rem;
-  font-family: var(--font-script);
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--text-primary);
-  resize: none;
-  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
-.form-textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-ring);
+.editor-loading__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .form-actions {
+  position: sticky;
+  bottom: 0;
   display: flex;
   gap: 0.75rem;
   padding-top: 1rem;
+  padding-bottom: 0.25rem;
+  background: var(--surface);
   border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 -1px 0 var(--border-subtle);
   margin-top: auto;
+  z-index: 1;
 }
 
 .form-button {
@@ -877,6 +982,7 @@ const formatDate = (timestamp: number) => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   overflow-y: auto;
   padding: 1.5rem;
 }

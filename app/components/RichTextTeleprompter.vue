@@ -2,12 +2,15 @@
 /**
  * RichTextTeleprompter
  *
- * Renders rich text content with word-by-word highlighting using
- * CSS Custom Highlight API. Preserves all formatting from the original
- * HTML while enabling teleprompter-style progression.
+ * Renders rich text content in a read-only CKEditor surface with
+ * word-by-word highlighting using the CSS Custom Highlight API.
  */
 
-const props = defineProps<{
+interface EditorInstance {
+  ui?: { getEditableElement?: () => HTMLElement | undefined }
+}
+
+defineProps<{
   htmlContent: string
   progress: number
   isListening: boolean
@@ -19,74 +22,36 @@ const emit = defineEmits<{
   'reset': []
   'edit': []
   'word-click': [wordIndex: number]
-  'initialized': [wordCount: number]
 }>()
 
 const {
-  containerRef,
   wordPositions,
   currentIndex,
   isSupported,
   initializeWordIndex,
-  setPositionAt,
   getWordAtPoint,
   resetProgress,
-  clearAllHighlights
 } = useRichTextHighlight()
 
 const scriptContainer = ref<HTMLElement | null>(null)
-const isInitialized = ref(false)
-const fallbackMode = ref(false)
 
-// Initialize word index when content changes
-watch(() => props.htmlContent, async () => {
-  isInitialized.value = false
-
-  // Wait for DOM to update
+const handleEditorReady = async (editor: EditorInstance) => {
   await nextTick()
+  const editable = editor.ui?.getEditableElement?.()
+  if (!editable) return
+  initializeWordIndex(editable, scriptContainer.value ?? editable)
+}
 
-  if (scriptContainer.value) {
-    initializeWordIndex(scriptContainer.value)
-    isInitialized.value = true
-    emit('initialized', wordPositions.value.length)
-
-    // Check if we need fallback mode (API not supported)
-    if (!isSupported.value) {
-      fallbackMode.value = true
-      console.warn('CSS Custom Highlight API not supported, using fallback mode')
-    }
-  }
-}, { immediate: true })
-
-// Handle click on script content
 const handleContentClick = (event: MouseEvent) => {
   const word = getWordAtPoint(event.clientX, event.clientY)
-  if (word) {
-    emit('word-click', word.index)
-  }
+  if (word) emit('word-click', word.index)
 }
 
-// Handle reset
 const handleReset = () => {
   resetProgress()
-  if (scriptContainer.value) {
-    scriptContainer.value.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  scriptContainer.value?.scrollTo({ top: 0, behavior: 'smooth' })
   emit('reset')
 }
-
-// Expose methods for parent component
-defineExpose({
-  setPositionAt,
-  resetProgress,
-  wordPositions,
-  currentIndex,
-  clearAllHighlights
-})
-
-onUnmounted(() => {
-  clearAllHighlights()
-})
 </script>
 
 <template>
@@ -103,11 +68,24 @@ onUnmounted(() => {
     </div>
 
     <!-- API Support Warning -->
-    <div v-if="fallbackMode" class="api-warning">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
-        <path d="M12 9v4"/>
-        <path d="M12 17h.01"/>
+    <div
+      v-if="!isSupported"
+      class="api-warning"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
       </svg>
       <span>Your browser doesn't support advanced highlighting. Using simplified mode.</span>
     </div>
@@ -118,9 +96,12 @@ onUnmounted(() => {
       class="script-container"
       @click="handleContentClick"
     >
-      <div
-        class="script-content"
-        v-html="htmlContent"
+      <RichTextEditor
+        :model-value="htmlContent"
+        :read-only="true"
+        :show-toolbar="false"
+        :placeholder="' '"
+        @ready="handleEditorReady"
       />
     </div>
 
@@ -166,7 +147,12 @@ onUnmounted(() => {
         >
           <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
           <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-          <line x1="12" x2="12" y1="19" y2="22" />
+          <line
+            x1="12"
+            x2="12"
+            y1="19"
+            y2="22"
+          />
         </svg>
         <svg
           v-else
@@ -180,7 +166,13 @@ onUnmounted(() => {
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <rect width="6" height="6" x="9" y="9" rx="1" />
+          <rect
+            width="6"
+            height="6"
+            x="9"
+            y="9"
+            rx="1"
+          />
         </svg>
       </button>
 
@@ -207,14 +199,20 @@ onUnmounted(() => {
     </div>
 
     <!-- Listening Indicator -->
-    <div v-if="isListening" class="listening-indicator">
+    <div
+      v-if="isListening"
+      class="listening-indicator"
+    >
       <span class="listening-dot" />
       <span class="listening-dot" />
       <span class="listening-dot" />
     </div>
 
     <!-- Debug Info -->
-    <div v-if="showDebug" class="debug-info">
+    <div
+      v-if="showDebug"
+      class="debug-info"
+    >
       <div class="debug-stat">
         <span class="debug-label">Words:</span>
         <span class="debug-value">{{ wordPositions.length }}</span>
@@ -225,7 +223,10 @@ onUnmounted(() => {
       </div>
       <div class="debug-stat">
         <span class="debug-label">API:</span>
-        <span class="debug-value" :class="{ 'debug-value--success': isSupported, 'debug-value--error': !isSupported }">
+        <span
+          class="debug-value"
+          :class="{ 'debug-value--success': isSupported, 'debug-value--error': !isSupported }"
+        >
           {{ isSupported ? 'Supported' : 'Fallback' }}
         </span>
       </div>
@@ -295,72 +296,92 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.script-content {
+.script-container :deep(.rich-text-editor) {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.script-container :deep(.ck.ck-editor) {
+  width: 100%;
+}
+
+.script-container :deep(.ck.ck-toolbar) {
+  display: none;
+}
+
+.script-container :deep(.ck.ck-editor__main > .ck-editor__editable) {
+  min-height: 100%;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.script-container :deep(.ck.ck-editor__main > .ck-editor__editable.ck-focused) {
+  box-shadow: none;
+}
+
+.script-container :deep(.ck-content) {
   font-family: var(--font-script);
   font-size: 1.5rem;
   line-height: 2.2;
-  text-align: center;
-  max-width: 48rem;
-  margin: 0 auto;
   word-spacing: 0.15em;
   word-wrap: break-word;
   overflow-wrap: break-word;
   color: var(--word-pending);
 }
 
-/* Rich text content styling */
-.script-content :deep(h1) {
+.script-container :deep(.ck-content h1) {
   font-size: 2.5rem;
   font-weight: 600;
   margin: 1.5rem 0 1rem;
   color: var(--text-primary);
 }
 
-.script-content :deep(h2) {
+.script-container :deep(.ck-content h2) {
   font-size: 2rem;
   font-weight: 600;
   margin: 1.25rem 0 0.875rem;
   color: var(--text-primary);
 }
 
-.script-content :deep(h3) {
+.script-container :deep(.ck-content h3) {
   font-size: 1.75rem;
   font-weight: 600;
   margin: 1rem 0 0.75rem;
   color: var(--text-primary);
 }
 
-.script-content :deep(p) {
+.script-container :deep(.ck-content p) {
   margin-bottom: 1rem;
 }
 
-.script-content :deep(ul),
-.script-content :deep(ol) {
-  text-align: left;
+.script-container :deep(.ck-content ul),
+.script-container :deep(.ck-content ol) {
   padding-left: 2rem;
   margin-bottom: 1rem;
 }
 
-.script-content :deep(li) {
+.script-container :deep(.ck-content li) {
   margin-bottom: 0.5rem;
 }
 
-.script-content :deep(strong),
-.script-content :deep(b) {
+.script-container :deep(.ck-content strong),
+.script-container :deep(.ck-content b) {
   font-weight: 600;
 }
 
-.script-content :deep(em),
-.script-content :deep(i) {
+.script-container :deep(.ck-content em),
+.script-container :deep(.ck-content i) {
   font-style: italic;
 }
 
-.script-content :deep(u) {
+.script-container :deep(.ck-content u) {
   text-decoration: underline;
 }
 
-.script-content :deep(s),
-.script-content :deep(strike) {
+.script-container :deep(.ck-content s),
+.script-container :deep(.ck-content strike) {
   text-decoration: line-through;
 }
 
@@ -505,10 +526,9 @@ onUnmounted(() => {
 }
 
 @media (max-width: 640px) {
-  .script-content {
+  .script-container :deep(.ck-content) {
     font-size: 1.25rem;
     line-height: 2;
-    padding: 2rem 1rem;
   }
 
   .controls {

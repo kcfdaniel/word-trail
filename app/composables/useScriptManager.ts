@@ -1,166 +1,90 @@
+import { useStorage } from '@vueuse/core'
+import { plainTextToHtml } from '~/utils/richText'
+
 export interface Script {
   id: string
   title: string
-  content: string // Plain text content (legacy/fallback)
-  contentHtml?: string // Rich text HTML content
-  isRichText?: boolean // Flag to indicate rich text mode
+  contentHtml: string
   createdAt: number
   updatedAt: number
-}
-
-export interface ScriptWord {
-  id: number
-  text: string
-  state: 'pending' | 'completed' | 'active'
 }
 
 const STORAGE_KEY = 'wordtrail-scripts'
 const CURRENT_SCRIPT_KEY = 'wordtrail-current-script'
 
+// Module-level singletons — shared across every useScriptManager() call,
+// so consumers see the same reactive state.
+const scripts = useStorage<Script[]>(STORAGE_KEY, [], undefined, {
+  deep: true,
+  listenToStorageChanges: true,
+  writeDefaults: true,
+})
+const currentScriptId = useStorage<string | null>(CURRENT_SCRIPT_KEY, null, undefined, {
+  listenToStorageChanges: true,
+  writeDefaults: true,
+})
+const isLoaded = ref(false)
+
+const normalizeScript = (script: Partial<Script> & { content?: string }): Script => {
+  const content = typeof script?.content === 'string' ? script.content : ''
+  const contentHtml = typeof script?.contentHtml === 'string'
+    ? script.contentHtml
+    : plainTextToHtml(content)
+
+  return {
+    id: String(script?.id ?? crypto.randomUUID()),
+    title: typeof script?.title === 'string' ? script.title : 'Untitled Script',
+    contentHtml,
+    createdAt: typeof script?.createdAt === 'number' ? script.createdAt : Date.now(),
+    updatedAt: typeof script?.updatedAt === 'number' ? script.updatedAt : Date.now(),
+  }
+}
+
+const normalizeStoredScripts = () => {
+  const normalized = scripts.value.map(normalizeScript)
+  if (JSON.stringify(scripts.value) !== JSON.stringify(normalized)) {
+    scripts.value = normalized
+  }
+  if (currentScriptId.value && !normalized.some(s => s.id === currentScriptId.value)) {
+    currentScriptId.value = null
+  }
+}
+
 export const useScriptManager = () => {
-  const scripts = ref<Script[]>([])
-  const currentScript = ref<Script | null>(null)
-  const scriptWords = ref<ScriptWord[]>([])
-  const currentIndex = ref(-1)
-  const isLoaded = ref(false)
-
-  const loadScripts = () => {
-    if (!import.meta.client) return
-
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        scripts.value = JSON.parse(stored)
-      }
-
-      const currentId = localStorage.getItem(CURRENT_SCRIPT_KEY)
-      if (currentId) {
-        const found = scripts.value.find(s => s.id === currentId)
-        if (found) {
-          setCurrentScript(found)
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load scripts:', e)
-    }
-
-    isLoaded.value = true
-  }
-
-  const saveScripts = () => {
-    if (!import.meta.client) return
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(scripts.value))
-    } catch (e) {
-      console.error('Failed to save scripts:', e)
-    }
-  }
-
-  const parseContent = (content: string): ScriptWord[] => {
-    const CJK_RANGE = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/
-    // Chinese/CJK punctuation ranges
-    const CJK_PUNCTUATION = /[\u3000-\u303f\uff00-\uffef\u2000-\u206f]/
-    const results: string[] = []
-    let currentWord = ''
-
-    for (let i = 0; i < content.length; i++) {
-      const char = content[i]!
-      if (CJK_RANGE.test(char)) {
-        // CJK character - flush current word, start new CJK word
-        if (currentWord.trim()) {
-          results.push(currentWord.trim())
-          currentWord = ''
-        }
-        // Start with CJK char, then collect any trailing CJK punctuation
-        let cjkWord = char
-        while (i + 1 < content.length && CJK_PUNCTUATION.test(content[i + 1]!)) {
-          i++
-          cjkWord += content[i]
-        }
-        results.push(cjkWord)
-      } else if (/\s/.test(char)) {
-        // Whitespace - flush current word
-        if (currentWord.trim()) {
-          results.push(currentWord.trim())
-          currentWord = ''
-        }
-      } else {
-        // Other characters (Latin, punctuation) - accumulate
-        currentWord += char
-      }
-    }
-
-    // Flush remaining
-    if (currentWord.trim()) {
-      results.push(currentWord.trim())
-    }
-
-    // Keep all segments including punctuation for display
-    return results.map((text, index) => ({
-      id: index,
-      text,
-      state: 'pending' as const
-    }))
-  }
+  const currentScript = computed(() => {
+    if (!currentScriptId.value) return null
+    return scripts.value.find(s => s.id === currentScriptId.value) ?? null
+  })
 
   const setCurrentScript = (script: Script | null) => {
-    currentScript.value = script
-    if (script) {
-      scriptWords.value = parseContent(script.content)
-      currentIndex.value = -1
-      if (import.meta.client) {
-        localStorage.setItem(CURRENT_SCRIPT_KEY, script.id)
-      }
-    } else {
-      scriptWords.value = []
-      currentIndex.value = -1
-      if (import.meta.client) {
-        localStorage.removeItem(CURRENT_SCRIPT_KEY)
-      }
-    }
+    currentScriptId.value = script?.id ?? null
   }
 
-  const createScript = (title: string, content: string, options?: { contentHtml?: string, isRichText?: boolean }): Script => {
+  const createScript = (title: string, contentHtml: string): Script => {
     const script: Script = {
       id: crypto.randomUUID(),
       title: title || 'Untitled Script',
-      content,
-      contentHtml: options?.contentHtml,
-      isRichText: options?.isRichText ?? false,
+      contentHtml,
       createdAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     }
-
     scripts.value.unshift(script)
-    saveScripts()
     setCurrentScript(script)
-
     return script
   }
 
-  const updateScript = (id: string, updates: Partial<Pick<Script, 'title' | 'content' | 'contentHtml' | 'isRichText'>>) => {
+  const updateScript = (id: string, updates: Partial<Pick<Script, 'title' | 'contentHtml'>>) => {
     const index = scripts.value.findIndex(s => s.id === id)
     if (index === -1) return
 
     const existing = scripts.value[index]
     if (!existing) return
 
-    const updated: Script = {
-      id: existing.id,
+    scripts.value[index] = {
+      ...existing,
       title: updates.title ?? existing.title,
-      content: updates.content ?? existing.content,
       contentHtml: updates.contentHtml ?? existing.contentHtml,
-      isRichText: updates.isRichText ?? existing.isRichText,
-      createdAt: existing.createdAt,
-      updatedAt: Date.now()
-    }
-
-    scripts.value[index] = updated
-    saveScripts()
-
-    if (currentScript.value?.id === id) {
-      setCurrentScript(updated)
+      updatedAt: Date.now(),
     }
   }
 
@@ -169,109 +93,29 @@ export const useScriptManager = () => {
     if (index === -1) return
 
     scripts.value.splice(index, 1)
-    saveScripts()
-
-    if (currentScript.value?.id === id) {
-      setCurrentScript(scripts.value[0] ?? null)
+    if (currentScriptId.value === id) {
+      currentScriptId.value = scripts.value[0]?.id ?? null
     }
   }
-
-  /**
-   * Move to a specific position in the script
-   * Marks all words before as completed, target as active
-   */
-  const moveTo = (targetIndex: number) => {
-    if (targetIndex < 0 || targetIndex >= scriptWords.value.length) return
-
-    // Update word states
-    for (let i = 0; i < scriptWords.value.length; i++) {
-      const word = scriptWords.value[i]
-      if (!word) continue
-
-      if (i < targetIndex) {
-        word.state = 'completed'
-      } else if (i === targetIndex) {
-        word.state = 'active'
-      } else {
-        word.state = 'pending'
-      }
-    }
-
-    currentIndex.value = targetIndex
-  }
-
-  /**
-   * Handle a match result - advance to the matched position
-   */
-  const handleMatch = (matchIndex: number) => {
-    // Only move forward or allow small rewinds
-    if (matchIndex > currentIndex.value || matchIndex >= currentIndex.value - 3) {
-      moveTo(matchIndex)
-    }
-  }
-
-  /**
-   * Set position manually (e.g., user clicked a word)
-   */
-  const setPositionAt = (targetIndex: number) => {
-    moveTo(targetIndex)
-  }
-
-  const resetProgress = () => {
-    scriptWords.value.forEach((word) => {
-      word.state = 'pending'
-    })
-    currentIndex.value = -1
-  }
-
-  const getProgress = computed(() => {
-    if (scriptWords.value.length === 0) return 0
-    const completed = scriptWords.value.filter(
-      w => w.state === 'completed' || w.state === 'active'
-    ).length
-    return Math.round((completed / scriptWords.value.length) * 100)
-  })
-
-  const activeWordIndex = computed(() => {
-    return scriptWords.value.findIndex(w => w.state === 'active')
-  })
 
   onMounted(() => {
-    loadScripts()
-  })
-
-  const getScriptById = (id: string): Script | null => {
-    return scripts.value.find(s => s.id === id) ?? null
-  }
-
-  const loadScriptById = (id: string): boolean => {
-    const script = getScriptById(id)
-    if (script) {
-      setCurrentScript(script)
-      return true
+    if (isLoaded.value) return
+    try {
+      normalizeStoredScripts()
     }
-    return false
-  }
+    catch (e) {
+      console.error('Failed to load scripts:', e)
+    }
+    isLoaded.value = true
+  })
 
   return {
     scripts: readonly(scripts),
-    currentScript: readonly(currentScript),
-    scriptWords,
-    currentIndex: readonly(currentIndex),
+    currentScript,
     isLoaded: readonly(isLoaded),
-    getProgress,
-    activeWordIndex,
-    // Functions
-    loadScripts,
     setCurrentScript,
-    getScriptById,
-    loadScriptById,
     createScript,
     updateScript,
     deleteScript,
-    moveTo,
-    handleMatch,
-    setPositionAt,
-    resetProgress
   }
 }

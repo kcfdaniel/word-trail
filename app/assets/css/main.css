@@ -189,6 +189,10 @@ body {
   background: var(--progress-fill) !important;
 }
 
+.ck-body-wrapper {
+  display: none;
+}
+
 /* Nuxt UI Overrides */
 @theme static {
   --font-sans: 'DM Sans', system-ui, sans-serif;
