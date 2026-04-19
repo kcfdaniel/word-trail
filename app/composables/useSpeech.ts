@@ -129,6 +129,7 @@ export const useSpeech = () => {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognitionAPI) {
       isSupported.value = false
+      console.error('not available')
       error.value = translateError('not-available')
       return
     }
@@ -176,7 +177,7 @@ export const useSpeech = () => {
 
     recognition.onerror = (event) => {
       if (SILENT_ERRORS.has(event.error)) return
-
+      console.error('recognition error', event)
       error.value = translateError(event.error)
 
       // Stop auto-restart for errors the user must address (permission, hardware,
