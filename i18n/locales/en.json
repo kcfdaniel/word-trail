@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save Changes",
+    "edit": "Edit",
+    "delete": "Delete",
+    "close": "Close",
+    "untitledScript": "Untitled Script"
+  },
+  "welcome": {
+    "badge": "Voice-Activated Teleprompter",
+    "titleStart": "Speak naturally.",
+    "titleAccent": "It follows you.",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Give your script a name...",
+    "contentLabel": "Your Script",
+    "contentPlaceholder": "Paste or type your script here...\n\nTry a speech, poem, presentation notes, or any text you want to practice reading aloud.",
+    "startButton": "Start Reading",
+    "browserWarning": "Speech recognition works best in Chrome, Edge, or Safari.",
+    "firstScriptTitle": "My First Script",
+    "keyboardHint": "{keys} to start",
+    "wordCount": "{count} word | {count} words"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "Search languages...",
+    "tooltip": "Language: {name}",
+    "empty": "No languages found"
+  },
+  "scripts": {
+    "pageTitle": "Scripts",
+    "searchPlaceholder": "Search scripts...",
+    "newButton": "New",
+    "noResults": "No scripts matching \"{query}\"",
+    "newScriptTitle": "New Script",
+    "editScriptTitle": "Edit Script",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Enter script title...",
+    "contentLabel": "Script Content",
+    "contentPlaceholder": "Paste or type your script here...",
+    "createButton": "Create Script",
+    "deleteConfirm": "Delete \"{title}\"? This cannot be undone.",
+    "unsavedConfirm": "You have unsaved changes. Discard them?",
+    "wordCount": "{count} word | {count} words"
+  },
+  "reader": {
+    "backToScripts": "Back to scripts",
+    "toggleDebug": "Toggle debug panel",
+    "resetProgress": "Reset progress",
+    "editScript": "Edit script",
+    "apiWarning": "Your browser doesn't support advanced highlighting. Using simplified mode."
+  },
+  "editor": {
+    "editTitle": "Edit Script",
+    "loadingEditor": "Loading editor...",
+    "editorPlaceholder": "Paste or type your script here... You can paste directly from Google Docs!",
+    "tip": "Tip: Paste from Google Docs to preserve formatting"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "No speech detected. Try speaking again.",
+      "aborted": "Listening stopped.",
+      "audio-capture": "Microphone unavailable. Check your audio device.",
+      "network": "Network error. Check your connection and try again.",
+      "not-allowed": "Microphone permission denied. Allow access in your browser settings.",
+      "service-not-allowed": "Speech recognition is blocked. Make sure you are on HTTPS and have granted permission.",
+      "bad-grammar": "Speech recognition grammar error.",
+      "language-not-supported": "The selected language is not supported by this browser.",
+      "not-available": "Speech recognition is not available in this browser. Try Chrome, Edge, or Safari.",
+      "unknown": "Speech recognition error."
+    }
+  }
+}

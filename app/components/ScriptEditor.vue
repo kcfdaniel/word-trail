@@ -5,6 +5,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
 const { currentScript, updateScript } = useScriptManager()
 
 const title = ref('')
@@ -16,7 +17,7 @@ const hasUnsavedChanges = computed(() => {
   return title.value !== initialTitle.value || contentHtml.value !== initialContentHtml.value
 })
 
-const discardMessage = 'You have unsaved changes. Discard them?'
+const discardMessage = computed(() => t('scripts.unsavedConfirm'))
 
 const wordCount = computed(() => {
   const text = htmlToPlainText(contentHtml.value)
@@ -36,7 +37,7 @@ watch(currentScript, (script) => {
   }
 }, { immediate: true })
 
-const confirmDiscard = () => !hasUnsavedChanges.value || confirm(discardMessage)
+const confirmDiscard = () => !hasUnsavedChanges.value || confirm(discardMessage.value)
 
 const attemptClose = () => {
   if (confirmDiscard()) {
@@ -61,7 +62,7 @@ onBeforeUnmount(() => {
 const save = () => {
   if (!htmlToPlainText(contentHtml.value).trim() || !currentScript.value) return
 
-  const savedTitle = title.value || 'Untitled Script'
+  const savedTitle = title.value || t('common.untitledScript')
   const savedContentHtml = contentHtml.value
 
   updateScript(currentScript.value.id, { title: savedTitle, contentHtml: savedContentHtml })
@@ -76,11 +77,11 @@ const save = () => {
     <!-- Header -->
     <div class="editor-header">
       <h2 class="editor-title">
-        Edit Script
+        {{ $t('editor.editTitle') }}
       </h2>
       <button
         class="close-button"
-        aria-label="Close"
+        :aria-label="$t('common.close')"
         @click="attemptClose"
       >
         <svg
@@ -106,31 +107,31 @@ const save = () => {
         <label
           for="script-title"
           class="form-label"
-        >Title</label>
+        >{{ $t('scripts.titleLabel') }}</label>
         <input
           id="script-title"
           v-model="title"
           type="text"
           class="form-input"
-          placeholder="Enter script title..."
+          :placeholder="$t('scripts.titlePlaceholder')"
         >
       </div>
 
       <div class="form-group form-group--grow">
         <label class="form-label">
-          Script Content
-          <span class="word-count">{{ wordCount }} words</span>
+          {{ $t('scripts.contentLabel') }}
+          <span class="word-count">{{ $t('scripts.wordCount', { count: wordCount }, wordCount) }}</span>
         </label>
         <div class="editor-wrapper">
           <ClientOnly>
             <RichTextEditor
               v-model="contentHtml"
-              placeholder="Paste or type your script here... You can paste directly from Google Docs!"
+              :placeholder="$t('editor.editorPlaceholder')"
             />
             <template #fallback>
               <div class="editor-loading">
                 <div class="editor-loading__spinner" />
-                <span>Loading editor...</span>
+                <span>{{ $t('editor.loadingEditor') }}</span>
               </div>
             </template>
           </ClientOnly>
@@ -155,7 +156,7 @@ const save = () => {
             <path d="M12 16v-4" />
             <path d="M12 8h.01" />
           </svg>
-          Tip: Paste from Google Docs to preserve formatting
+          {{ $t('editor.tip') }}
         </p>
       </div>
 
@@ -164,14 +165,14 @@ const save = () => {
           class="form-button form-button--secondary"
           @click="attemptClose"
         >
-          Cancel
+          {{ $t('common.cancel') }}
         </button>
         <button
           class="form-button form-button--primary"
           :disabled="!htmlToPlainText(contentHtml).trim()"
           @click="save"
         >
-          Save Changes
+          {{ $t('common.save') }}
         </button>
       </div>
     </div>

@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "Annulla",
+    "save": "Salva modifiche",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "close": "Chiudi",
+    "untitledScript": "Script senza titolo"
+  },
+  "welcome": {
+    "badge": "Teleprompter a comando vocale",
+    "titleStart": "Parla con naturalezza.",
+    "titleAccent": "Il testo ti segue.",
+    "titleLabel": "Titolo",
+    "titlePlaceholder": "Dai un nome al tuo script...",
+    "contentLabel": "Il tuo script",
+    "contentPlaceholder": "Incolla o scrivi il tuo script qui...\n\nProva con un discorso, una poesia, appunti di presentazione o qualsiasi testo che vuoi leggere ad alta voce.",
+    "startButton": "Inizia a leggere",
+    "browserWarning": "Il riconoscimento vocale funziona meglio su Chrome, Edge o Safari.",
+    "firstScriptTitle": "Il mio primo script",
+    "keyboardHint": "{keys} per iniziare",
+    "wordCount": "{count} parola | {count} parole"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "Cerca lingue...",
+    "tooltip": "Lingua: {name}",
+    "empty": "Nessuna lingua trovata"
+  },
+  "scripts": {
+    "pageTitle": "Script",
+    "searchPlaceholder": "Cerca script...",
+    "newButton": "Nuovo",
+    "noResults": "Nessuno script corrisponde a \"{query}\"",
+    "newScriptTitle": "Nuovo script",
+    "editScriptTitle": "Modifica script",
+    "titleLabel": "Titolo",
+    "titlePlaceholder": "Inserisci il titolo dello script...",
+    "contentLabel": "Contenuto dello script",
+    "contentPlaceholder": "Incolla o scrivi il tuo script qui...",
+    "createButton": "Crea script",
+    "deleteConfirm": "Eliminare \"{title}\"? L'operazione non può essere annullata.",
+    "unsavedConfirm": "Hai modifiche non salvate. Vuoi scartarle?",
+    "wordCount": "{count} parola | {count} parole"
+  },
+  "reader": {
+    "backToScripts": "Torna agli script",
+    "toggleDebug": "Mostra/nascondi pannello di debug",
+    "resetProgress": "Reimposta avanzamento",
+    "editScript": "Modifica script",
+    "apiWarning": "Il tuo browser non supporta l'evidenziazione avanzata. È in uso la modalità semplificata."
+  },
+  "editor": {
+    "editTitle": "Modifica script",
+    "loadingEditor": "Caricamento editor...",
+    "editorPlaceholder": "Incolla o scrivi il tuo script qui... Puoi incollare direttamente da Google Docs!",
+    "tip": "Suggerimento: incolla da Google Docs per mantenere la formattazione"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "Nessuna voce rilevata. Riprova.",
+      "aborted": "Ascolto interrotto.",
+      "audio-capture": "Microfono non disponibile. Controlla il dispositivo audio.",
+      "network": "Errore di rete. Controlla la connessione e riprova.",
+      "not-allowed": "Permesso del microfono negato. Consenti l'accesso nelle impostazioni del browser.",
+      "service-not-allowed": "Riconoscimento vocale bloccato. Usa HTTPS e concedi il permesso al microfono.",
+      "bad-grammar": "Errore grammaticale del riconoscimento vocale.",
+      "language-not-supported": "Questo browser non supporta la lingua selezionata.",
+      "not-available": "Il riconoscimento vocale non è disponibile in questo browser. Prova Chrome, Edge o Safari.",
+      "unknown": "Errore di riconoscimento vocale."
+    }
+  }
+}

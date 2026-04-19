@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "close": "Fermer",
+    "untitledScript": "Script sans titre"
+  },
+  "welcome": {
+    "badge": "Téléprompteur activé par la voix",
+    "titleStart": "Parle naturellement.",
+    "titleAccent": "Le texte te suit.",
+    "titleLabel": "Titre",
+    "titlePlaceholder": "Donne un nom à ton script...",
+    "contentLabel": "Ton script",
+    "contentPlaceholder": "Colle ou saisis ton script ici...\n\nEssaie un discours, un poème, des notes de présentation, ou n'importe quel texte que tu veux pratiquer à haute voix.",
+    "startButton": "Commencer la lecture",
+    "browserWarning": "La reconnaissance vocale fonctionne mieux dans Chrome, Edge ou Safari.",
+    "firstScriptTitle": "Mon premier script",
+    "keyboardHint": "{keys} pour démarrer",
+    "wordCount": "{count} mot | {count} mots"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "Rechercher une langue...",
+    "tooltip": "Langue : {name}",
+    "empty": "Aucune langue trouvée"
+  },
+  "scripts": {
+    "pageTitle": "Scripts",
+    "searchPlaceholder": "Rechercher un script...",
+    "newButton": "Nouveau",
+    "noResults": "Aucun script ne correspond à « {query} »",
+    "newScriptTitle": "Nouveau script",
+    "editScriptTitle": "Modifier le script",
+    "titleLabel": "Titre",
+    "titlePlaceholder": "Saisis le titre du script...",
+    "contentLabel": "Contenu du script",
+    "contentPlaceholder": "Colle ou saisis ton script ici...",
+    "createButton": "Créer le script",
+    "deleteConfirm": "Supprimer « {title} » ? Cette action est irréversible.",
+    "unsavedConfirm": "Tu as des modifications non enregistrées. Les abandonner ?",
+    "wordCount": "{count} mot | {count} mots"
+  },
+  "reader": {
+    "backToScripts": "Retour aux scripts",
+    "toggleDebug": "Afficher/masquer le panneau de débogage",
+    "resetProgress": "Réinitialiser la progression",
+    "editScript": "Modifier le script",
+    "apiWarning": "Ton navigateur ne prend pas en charge le surlignage avancé. Mode simplifié activé."
+  },
+  "editor": {
+    "editTitle": "Modifier le script",
+    "loadingEditor": "Chargement de l'éditeur...",
+    "editorPlaceholder": "Colle ou saisis ton script ici... Tu peux coller directement depuis Google Docs !",
+    "tip": "Astuce : colle depuis Google Docs pour conserver la mise en forme"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "Aucune parole détectée. Réessaye.",
+      "aborted": "Écoute arrêtée.",
+      "audio-capture": "Microphone indisponible. Vérifie ton périphérique audio.",
+      "network": "Erreur réseau. Vérifie ta connexion et réessaie.",
+      "not-allowed": "Autorisation du microphone refusée. Autorise l'accès dans les paramètres du navigateur.",
+      "service-not-allowed": "Reconnaissance vocale bloquée. Utilise HTTPS et accorde la permission.",
+      "bad-grammar": "Erreur de grammaire de reconnaissance vocale.",
+      "language-not-supported": "La langue sélectionnée n'est pas prise en charge par ce navigateur.",
+      "not-available": "La reconnaissance vocale n'est pas disponible dans ce navigateur. Essaie Chrome, Edge ou Safari.",
+      "unknown": "Erreur de reconnaissance vocale."
+    }
+  }
+}

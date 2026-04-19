@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "Abbrechen",
+    "save": "Änderungen speichern",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "close": "Schließen",
+    "untitledScript": "Unbenanntes Skript"
+  },
+  "welcome": {
+    "badge": "Sprachgesteuerter Teleprompter",
+    "titleStart": "Sprich ganz natürlich.",
+    "titleAccent": "Der Text folgt dir.",
+    "titleLabel": "Titel",
+    "titlePlaceholder": "Gib deinem Skript einen Namen...",
+    "contentLabel": "Dein Skript",
+    "contentPlaceholder": "Füge dein Skript hier ein oder tippe es ab...\n\nProbiere eine Rede, ein Gedicht, Präsentationsnotizen oder beliebigen Text, den du laut üben möchtest.",
+    "startButton": "Lesen starten",
+    "browserWarning": "Die Spracherkennung funktioniert am besten in Chrome, Edge oder Safari.",
+    "firstScriptTitle": "Mein erstes Skript",
+    "keyboardHint": "{keys} zum Starten",
+    "wordCount": "{count} Wort | {count} Wörter"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "Sprache suchen...",
+    "tooltip": "Sprache: {name}",
+    "empty": "Keine Sprachen gefunden"
+  },
+  "scripts": {
+    "pageTitle": "Skripte",
+    "searchPlaceholder": "Skripte suchen...",
+    "newButton": "Neu",
+    "noResults": "Keine Skripte passend zu „{query}“",
+    "newScriptTitle": "Neues Skript",
+    "editScriptTitle": "Skript bearbeiten",
+    "titleLabel": "Titel",
+    "titlePlaceholder": "Skripttitel eingeben...",
+    "contentLabel": "Skriptinhalt",
+    "contentPlaceholder": "Füge dein Skript hier ein oder tippe es ab...",
+    "createButton": "Skript erstellen",
+    "deleteConfirm": "„{title}“ löschen? Das kann nicht rückgängig gemacht werden.",
+    "unsavedConfirm": "Du hast ungespeicherte Änderungen. Verwerfen?",
+    "wordCount": "{count} Wort | {count} Wörter"
+  },
+  "reader": {
+    "backToScripts": "Zurück zu den Skripten",
+    "toggleDebug": "Debug-Panel umschalten",
+    "resetProgress": "Fortschritt zurücksetzen",
+    "editScript": "Skript bearbeiten",
+    "apiWarning": "Dein Browser unterstützt das erweiterte Hervorheben nicht. Vereinfachter Modus aktiv."
+  },
+  "editor": {
+    "editTitle": "Skript bearbeiten",
+    "loadingEditor": "Editor wird geladen...",
+    "editorPlaceholder": "Füge dein Skript hier ein oder tippe es ab... Du kannst direkt aus Google Docs einfügen!",
+    "tip": "Tipp: Einfügen aus Google Docs behält die Formatierung"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "Keine Sprache erkannt. Versuche es noch einmal.",
+      "aborted": "Aufnahme gestoppt.",
+      "audio-capture": "Mikrofon nicht verfügbar. Überprüfe dein Audiogerät.",
+      "network": "Netzwerkfehler. Überprüfe deine Verbindung und versuche es erneut.",
+      "not-allowed": "Mikrofonzugriff verweigert. Erlaube den Zugriff in den Browsereinstellungen.",
+      "service-not-allowed": "Spracherkennung blockiert. Verwende HTTPS und erteile die Mikrofonberechtigung.",
+      "bad-grammar": "Grammatikfehler der Spracherkennung.",
+      "language-not-supported": "Die gewählte Sprache wird von diesem Browser nicht unterstützt.",
+      "not-available": "Spracherkennung ist in diesem Browser nicht verfügbar. Versuche Chrome, Edge oder Safari.",
+      "unknown": "Fehler bei der Spracherkennung."
+    }
+  }
+}

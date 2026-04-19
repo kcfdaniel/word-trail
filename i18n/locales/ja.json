@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "キャンセル",
+    "save": "変更を保存",
+    "edit": "編集",
+    "delete": "削除",
+    "close": "閉じる",
+    "untitledScript": "無題のスクリプト"
+  },
+  "welcome": {
+    "badge": "音声起動のテレプロンプター",
+    "titleStart": "自然に話そう。",
+    "titleAccent": "テキストが追いかけてくれる。",
+    "titleLabel": "タイトル",
+    "titlePlaceholder": "スクリプトに名前を付けてください…",
+    "contentLabel": "あなたのスクリプト",
+    "contentPlaceholder": "ここにスクリプトを貼り付けるか入力してください…\n\nスピーチ、詩、プレゼン用メモなど、音読したい文章を試してみましょう。",
+    "startButton": "読み上げ開始",
+    "browserWarning": "音声認識は Chrome、Edge、Safari での動作が最も安定します。",
+    "firstScriptTitle": "最初のスクリプト",
+    "keyboardHint": "{keys} で開始",
+    "wordCount": "{count} 語"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "言語を検索…",
+    "tooltip": "言語: {name}",
+    "empty": "言語が見つかりません"
+  },
+  "scripts": {
+    "pageTitle": "スクリプト",
+    "searchPlaceholder": "スクリプトを検索…",
+    "newButton": "新規",
+    "noResults": "「{query}」に一致するスクリプトはありません",
+    "newScriptTitle": "新しいスクリプト",
+    "editScriptTitle": "スクリプトを編集",
+    "titleLabel": "タイトル",
+    "titlePlaceholder": "スクリプトのタイトルを入力…",
+    "contentLabel": "スクリプトの内容",
+    "contentPlaceholder": "ここにスクリプトを貼り付けるか入力してください…",
+    "createButton": "スクリプトを作成",
+    "deleteConfirm": "「{title}」を削除しますか?この操作は元に戻せません。",
+    "unsavedConfirm": "保存されていない変更があります。破棄しますか?",
+    "wordCount": "{count} 語"
+  },
+  "reader": {
+    "backToScripts": "スクリプト一覧に戻る",
+    "toggleDebug": "デバッグパネルを切り替える",
+    "resetProgress": "進捗をリセット",
+    "editScript": "スクリプトを編集",
+    "apiWarning": "このブラウザは高度なハイライトをサポートしていません。簡易モードを使用します。"
+  },
+  "editor": {
+    "editTitle": "スクリプトを編集",
+    "loadingEditor": "エディターを読み込み中…",
+    "editorPlaceholder": "ここにスクリプトを貼り付けるか入力してください… Google Docs から直接貼り付けも可能です!",
+    "tip": "ヒント:Google Docs から貼り付けると書式が保持されます"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "音声が検出されませんでした。もう一度お試しください。",
+      "aborted": "録音を停止しました。",
+      "audio-capture": "マイクを使用できません。オーディオ機器を確認してください。",
+      "network": "ネットワークエラーです。接続を確認してください。",
+      "not-allowed": "マイクの使用が許可されていません。ブラウザの設定で許可してください。",
+      "service-not-allowed": "音声認識がブロックされています。HTTPS を使用しマイクを許可してください。",
+      "bad-grammar": "音声認識の文法エラーです。",
+      "language-not-supported": "このブラウザは選択された言語をサポートしていません。",
+      "not-available": "このブラウザは音声認識をサポートしていません。Chrome、Edge、Safari をお試しください。",
+      "unknown": "音声認識エラーが発生しました。"
+    }
+  }
+}

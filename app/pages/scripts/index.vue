@@ -3,6 +3,7 @@ import type { Script } from '~/composables/useScriptManager'
 import { htmlToPlainText } from '~/utils/richText'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const {
   scripts,
@@ -33,7 +34,7 @@ const hasUnsavedChanges = computed(() => {
   return title.value !== initialTitle.value || contentHtml.value !== initialContentHtml.value
 })
 
-const discardMessage = 'You have unsaved changes. Discard them?'
+const discardMessage = computed(() => t('scripts.unsavedConfirm'))
 
 const wordCount = computed(() => {
   return htmlToPlainText(contentHtml.value).split(/\s+/).filter(w => w.trim().length > 0).length
@@ -80,7 +81,7 @@ const openEdit = (script: Script) => {
 const save = () => {
   if (!htmlToPlainText(contentHtml.value).trim()) return
 
-  const savedTitle = title.value || 'Untitled Script'
+  const savedTitle = title.value || t('common.untitledScript')
   if (mode.value === 'new') {
     createScript(savedTitle, contentHtml.value)
   }
@@ -98,7 +99,7 @@ const save = () => {
 
 const confirmDiscard = () => {
   if (!hasUnsavedChanges.value) return true
-  return confirm(discardMessage)
+  return confirm(discardMessage.value)
 }
 
 const cancel = () => {
@@ -112,7 +113,7 @@ const cancel = () => {
 }
 
 const confirmDelete = (script: Script) => {
-  if (confirm(`Delete "${script.title}"? This cannot be undone.`)) {
+  if (confirm(t('scripts.deleteConfirm', { title: script.title }))) {
     deleteScript(script.id)
   }
 }
@@ -194,7 +195,7 @@ onBeforeRouteLeave(() => {
         <!-- Page Title -->
         <div class="page-title-section">
           <h1 class="page-title">
-            Scripts
+            {{ $t('scripts.pageTitle') }}
           </h1>
         </div>
 
@@ -226,7 +227,7 @@ onBeforeRouteLeave(() => {
                 v-model="searchQuery"
                 type="text"
                 class="search-input"
-                placeholder="Search scripts..."
+                :placeholder="$t('scripts.searchPlaceholder')"
               >
             </div>
             <button
@@ -247,7 +248,7 @@ onBeforeRouteLeave(() => {
                 <path d="M5 12h14" />
                 <path d="M12 5v14" />
               </svg>
-              New
+              {{ $t('scripts.newButton') }}
             </button>
           </div>
 
@@ -256,7 +257,7 @@ onBeforeRouteLeave(() => {
             v-if="filteredScripts.length === 0 && searchQuery"
             class="empty-state"
           >
-            <p>No scripts matching "{{ searchQuery }}"</p>
+            <p>{{ $t('scripts.noResults', { query: searchQuery }) }}</p>
           </div>
 
           <div
@@ -282,7 +283,7 @@ onBeforeRouteLeave(() => {
               <div class="script-item-actions">
                 <button
                   class="action-button"
-                  title="Edit"
+                  :title="$t('common.edit')"
                   @click.stop="openEdit(script)"
                 >
                   <svg
@@ -301,7 +302,7 @@ onBeforeRouteLeave(() => {
                 </button>
                 <button
                   class="action-button action-button--danger"
-                  title="Delete"
+                  :title="$t('common.delete')"
                   @click.stop="confirmDelete(script)"
                 >
                   <svg
@@ -335,11 +336,11 @@ onBeforeRouteLeave(() => {
       >
         <div class="editor-header">
           <h2 class="editor-title">
-            {{ mode === 'new' ? 'New Script' : 'Edit Script' }}
+            {{ mode === 'new' ? $t('scripts.newScriptTitle') : $t('scripts.editScriptTitle') }}
           </h2>
           <button
             class="close-button"
-            aria-label="Close"
+            :aria-label="$t('common.close')"
             @click="cancel"
           >
             <svg
@@ -364,13 +365,13 @@ onBeforeRouteLeave(() => {
             <label
               for="script-title"
               class="form-label"
-            >Title</label>
+            >{{ $t('scripts.titleLabel') }}</label>
             <input
               id="script-title"
               v-model="title"
               type="text"
               class="form-input"
-              placeholder="Enter script title..."
+              :placeholder="$t('scripts.titlePlaceholder')"
             >
           </div>
 
@@ -379,19 +380,19 @@ onBeforeRouteLeave(() => {
               for="script-content"
               class="form-label"
             >
-              Script Content
-              <span class="word-count">{{ wordCount }} words</span>
+              {{ $t('scripts.contentLabel') }}
+              <span class="word-count">{{ $t('scripts.wordCount', { count: wordCount }, wordCount) }}</span>
             </label>
             <div class="editor-wrapper">
               <ClientOnly>
                 <RichTextEditor
                   v-model="contentHtml"
-                  placeholder="Paste or type your script here..."
+                  :placeholder="$t('scripts.contentPlaceholder')"
                 />
                 <template #fallback>
                   <div class="editor-loading">
                     <div class="editor-loading__spinner" />
-                    <span>Loading editor...</span>
+                    <span>{{ $t('editor.loadingEditor') }}</span>
                   </div>
                 </template>
               </ClientOnly>
@@ -403,14 +404,14 @@ onBeforeRouteLeave(() => {
               class="form-button form-button--secondary"
               @click="cancel"
             >
-              Cancel
+              {{ $t('common.cancel') }}
             </button>
             <button
               class="form-button form-button--primary"
               :disabled="!htmlToPlainText(contentHtml).trim()"
               @click="save"
             >
-              {{ mode === 'new' ? 'Create Script' : 'Save Changes' }}
+              {{ mode === 'new' ? $t('scripts.createButton') : $t('common.save') }}
             </button>
           </div>
         </div>
@@ -799,42 +800,6 @@ onBeforeRouteLeave(() => {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-ring);
-}
-
-.editor-wrapper {
-  flex: 1;
-  min-height: 0;
-  max-height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.editor-wrapper :deep(.rich-text-editor) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.editor-wrapper :deep(.ck.ck-editor) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.editor-wrapper :deep(.ck.ck-editor__main) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.editor-wrapper :deep(.ck.ck-editor__main > .ck-editor__editable) {
-  flex: 1;
-  min-height: 18rem;
-  max-height: 100%;
-  overflow-y: auto;
 }
 
 .editor-loading {

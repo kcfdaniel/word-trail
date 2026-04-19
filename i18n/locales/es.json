@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "Cancelar",
+    "save": "Guardar cambios",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "close": "Cerrar",
+    "untitledScript": "Guion sin título"
+  },
+  "welcome": {
+    "badge": "Teleprompter activado por voz",
+    "titleStart": "Habla con naturalidad.",
+    "titleAccent": "El texto te sigue.",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Dale un nombre a tu guion...",
+    "contentLabel": "Tu guion",
+    "contentPlaceholder": "Pega o escribe tu guion aquí...\n\nPrueba con un discurso, un poema, notas de presentación o cualquier texto que quieras practicar en voz alta.",
+    "startButton": "Empezar a leer",
+    "browserWarning": "El reconocimiento de voz funciona mejor en Chrome, Edge o Safari.",
+    "firstScriptTitle": "Mi primer guion",
+    "keyboardHint": "{keys} para empezar",
+    "wordCount": "{count} palabra | {count} palabras"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "Buscar idiomas...",
+    "tooltip": "Idioma: {name}",
+    "empty": "No se encontraron idiomas"
+  },
+  "scripts": {
+    "pageTitle": "Guiones",
+    "searchPlaceholder": "Buscar guiones...",
+    "newButton": "Nuevo",
+    "noResults": "No hay guiones que coincidan con \"{query}\"",
+    "newScriptTitle": "Nuevo guion",
+    "editScriptTitle": "Editar guion",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Introduce el título del guion...",
+    "contentLabel": "Contenido del guion",
+    "contentPlaceholder": "Pega o escribe tu guion aquí...",
+    "createButton": "Crear guion",
+    "deleteConfirm": "¿Eliminar \"{title}\"? Esta acción no se puede deshacer.",
+    "unsavedConfirm": "Tienes cambios sin guardar. ¿Quieres descartarlos?",
+    "wordCount": "{count} palabra | {count} palabras"
+  },
+  "reader": {
+    "backToScripts": "Volver a los guiones",
+    "toggleDebug": "Mostrar/ocultar panel de depuración",
+    "resetProgress": "Reiniciar progreso",
+    "editScript": "Editar guion",
+    "apiWarning": "Tu navegador no admite el resaltado avanzado. Se está usando el modo simplificado."
+  },
+  "editor": {
+    "editTitle": "Editar guion",
+    "loadingEditor": "Cargando editor...",
+    "editorPlaceholder": "Pega o escribe tu guion aquí... ¡Puedes pegar directamente desde Google Docs!",
+    "tip": "Consejo: pega desde Google Docs para conservar el formato"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "No se detectó voz. Vuelve a intentarlo.",
+      "aborted": "Escucha detenida.",
+      "audio-capture": "Micrófono no disponible. Revisa tu dispositivo de audio.",
+      "network": "Error de red. Revisa tu conexión e inténtalo de nuevo.",
+      "not-allowed": "Permiso del micrófono denegado. Permite el acceso en la configuración del navegador.",
+      "service-not-allowed": "Reconocimiento de voz bloqueado. Usa HTTPS y concede permiso al micrófono.",
+      "bad-grammar": "Error de gramática de reconocimiento de voz.",
+      "language-not-supported": "Este navegador no admite el idioma seleccionado.",
+      "not-available": "El reconocimiento de voz no está disponible en este navegador. Prueba Chrome, Edge o Safari.",
+      "unknown": "Error de reconocimiento de voz."
+    }
+  }
+}

@@ -165,7 +165,7 @@ const handleReady = (editor: any) => {
 }
 
 .rich-text-editor .ck.ck-editor__main > .ck-editor__editable {
-  min-height: 300px;
+  min-height: 100px;
   font-family: var(--font-script);
   font-size: 1.125rem;
   line-height: 1.8;

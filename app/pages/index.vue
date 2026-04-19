@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { plainTextToHtml } from '~/utils/richText'
-
 const router = useRouter()
 
 const {
@@ -21,8 +19,8 @@ watch([isLoaded, scripts], ([loaded, scriptsList]) => {
 }, { immediate: true })
 
 // Handle start reading from welcome landing
-const handleStartReading = (scriptTitle: string, scriptContent: string, _language: string) => {
-  const newScript = createScript(scriptTitle, plainTextToHtml(scriptContent))
+const handleStartReading = (scriptTitle: string, scriptContentHtml: string, _language: string) => {
+  const newScript = createScript(scriptTitle, scriptContentHtml)
   setCurrentScript(newScript)
   autoStartListening.value = true
 }

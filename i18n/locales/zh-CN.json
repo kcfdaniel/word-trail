@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "取消",
+    "save": "保存更改",
+    "edit": "编辑",
+    "delete": "删除",
+    "close": "关闭",
+    "untitledScript": "未命名脚本"
+  },
+  "welcome": {
+    "badge": "语音驱动提词器",
+    "titleStart": "自然开口。",
+    "titleAccent": "文字自动跟随。",
+    "titleLabel": "标题",
+    "titlePlaceholder": "给你的脚本取个名字……",
+    "contentLabel": "你的脚本",
+    "contentPlaceholder": "在此粘贴或输入你的脚本……\n\n可以尝试演讲稿、诗歌、演示笔记,或任何想练习朗读的文本。",
+    "startButton": "开始朗读",
+    "browserWarning": "语音识别在 Chrome、Edge 或 Safari 上效果最佳。",
+    "firstScriptTitle": "我的第一个脚本",
+    "keyboardHint": "按 {keys} 开始",
+    "wordCount": "{count} 个词"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "搜索语言……",
+    "tooltip": "语言:{name}",
+    "empty": "未找到语言"
+  },
+  "scripts": {
+    "pageTitle": "脚本",
+    "searchPlaceholder": "搜索脚本……",
+    "newButton": "新建",
+    "noResults": "未找到包含 “{query}” 的脚本",
+    "newScriptTitle": "新建脚本",
+    "editScriptTitle": "编辑脚本",
+    "titleLabel": "标题",
+    "titlePlaceholder": "输入脚本标题……",
+    "contentLabel": "脚本内容",
+    "contentPlaceholder": "在此粘贴或输入你的脚本……",
+    "createButton": "创建脚本",
+    "deleteConfirm": "确定要删除 “{title}” 吗?此操作无法撤销。",
+    "unsavedConfirm": "你有未保存的更改。确定要放弃吗?",
+    "wordCount": "{count} 个词"
+  },
+  "reader": {
+    "backToScripts": "返回脚本列表",
+    "toggleDebug": "切换调试面板",
+    "resetProgress": "重置进度",
+    "editScript": "编辑脚本",
+    "apiWarning": "当前浏览器不支持高级高亮功能,已切换到简化模式。"
+  },
+  "editor": {
+    "editTitle": "编辑脚本",
+    "loadingEditor": "正在加载编辑器……",
+    "editorPlaceholder": "在此粘贴或输入你的脚本……可以直接从 Google Docs 粘贴!",
+    "tip": "提示:从 Google Docs 粘贴可以保留格式"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "未检测到语音,请再试一次。",
+      "aborted": "已停止收音。",
+      "audio-capture": "无法使用麦克风,请检查音频设备。",
+      "network": "网络错误,请检查网络连接。",
+      "not-allowed": "麦克风权限被拒绝,请在浏览器设置中允许访问。",
+      "service-not-allowed": "语音识别被阻止,请使用 HTTPS 并授权麦克风。",
+      "bad-grammar": "语音识别语法错误。",
+      "language-not-supported": "当前浏览器不支持所选语言。",
+      "not-available": "当前浏览器不支持语音识别,请使用 Chrome、Edge 或 Safari。",
+      "unknown": "语音识别出错。"
+    }
+  }
+}

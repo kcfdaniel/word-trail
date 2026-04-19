@@ -87,7 +87,7 @@ const handleReset = () => {
         <path d="M12 9v4" />
         <path d="M12 17h.01" />
       </svg>
-      <span>Your browser doesn't support advanced highlighting. Using simplified mode.</span>
+      <span>{{ $t('reader.apiWarning') }}</span>
     </div>
 
     <!-- Script Display with Rich Text -->
@@ -109,7 +109,7 @@ const handleReset = () => {
     <div class="controls">
       <button
         class="control-button control-button--secondary"
-        title="Reset progress"
+        :title="$t('reader.resetProgress')"
         @click="handleReset"
       >
         <svg
@@ -178,7 +178,7 @@ const handleReset = () => {
 
       <button
         class="control-button control-button--secondary"
-        title="Edit script"
+        :title="$t('reader.editScript')"
         @click="emit('edit')"
       >
         <svg

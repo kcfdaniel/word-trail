@@ -101,10 +101,7 @@ watch([transcript, interimTranscript], () => {
 })
 
 const handleToggleListening = () => {
-  if (!isSupported.value) {
-    alert('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.')
-    return
-  }
+  if (!isSupported.value) return
   toggleSpeech()
 }
 
@@ -157,7 +154,7 @@ onUnmounted(() => {
       <div class="header-left">
         <button
           class="back-button"
-          title="Back to scripts"
+          :title="$t('reader.backToScripts')"
           @click="goBack"
         >
           <svg
@@ -189,7 +186,7 @@ onUnmounted(() => {
           v-if="isDebugEnabled"
           class="header-button"
           :class="{ 'header-button--debug': showDebugPanel }"
-          title="Toggle debug panel"
+          :title="$t('reader.toggleDebug')"
           @click="toggleDebugPanel"
         >
           <svg

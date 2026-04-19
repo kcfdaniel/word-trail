@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { htmlToPlainText } from '~/utils/richText'
+
 const emit = defineEmits<{
-  'start-reading': [title: string, content: string, language: string]
+  'start-reading': [title: string, contentHtml: string, language: string]
 }>()
 
+const { t } = useI18n()
 const { isSupported, language, setLanguage } = useSpeech()
 
 // Persist language selection to localStorage
@@ -20,15 +23,16 @@ const handleLanguageSelect = (lang: string) => {
   localStorage.setItem(LANGUAGE_STORAGE_KEY, lang)
 }
 
-const title = ref('My First Script')
-const content = ref('')
-const contentRef = ref<HTMLTextAreaElement | null>(null)
+const title = ref(t('welcome.firstScriptTitle'))
+const contentHtml = ref('')
+
+const plainContent = computed(() => htmlToPlainText(contentHtml.value))
 
 const wordCount = computed(() => {
-  return content.value.split(/\s+/).filter(w => w.trim().length > 0).length
+  return plainContent.value.split(/\s+/).filter(w => w.trim().length > 0).length
 })
 
-const canStart = computed(() => content.value.trim().length > 0)
+const canStart = computed(() => plainContent.value.trim().length > 0)
 
 // Platform detection for keyboard hint
 const isMac = computed(() => {
@@ -40,15 +44,17 @@ const isMac = computed(() => {
 
 const handleStart = () => {
   if (!canStart.value) return
-  emit('start-reading', title.value || 'Untitled Script', content.value, language.value)
+  emit('start-reading', title.value || t('common.untitledScript'), contentHtml.value, language.value)
 }
 
-// Auto-focus textarea on mount
-onMounted(() => {
-  setTimeout(() => {
-    contentRef.value?.focus()
-  }, 600)
-})
+// Cmd/Ctrl+Enter anywhere inside the card submits, including from the
+// CKEditor surface — we listen on the wrapper so the event can bubble up.
+const handleCardKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Enter') return
+  if (!(event.metaKey || event.ctrlKey)) return
+  event.preventDefault()
+  handleStart()
+}
 </script>
 
 <template>
@@ -64,7 +70,7 @@ onMounted(() => {
           src="/app-logo.png"
           alt="WordTrail"
           class="brand-logo"
-        />
+        >
       </div>
       <div class="header-actions">
         <LanguageSelector
@@ -76,7 +82,7 @@ onMounted(() => {
 
     <!-- Main content -->
     <main class="landing-main">
-      <div class="landing-content">
+      <div class="landing-content h-full">
         <!-- Hero section -->
         <div class="hero-section">
           <div class="hero-badge">
@@ -93,54 +99,70 @@ onMounted(() => {
             >
               <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" x2="12" y1="19" y2="22" />
+              <line
+                x1="12"
+                x2="12"
+                y1="19"
+                y2="22"
+              />
             </svg>
-            Voice-Activated Teleprompter
+            {{ $t('welcome.badge') }}
           </div>
           <h1 class="hero-title">
-            Speak naturally.<br />
-            <span class="hero-title-accent">It follows you.</span>
+            {{ $t('welcome.titleStart') }}<br>
+            <span class="hero-title-accent">{{ $t('welcome.titleAccent') }}</span>
           </h1>
-          <p class="hero-description">
-            A teleprompter that listens to your voice and scrolls at your pace.
-            Supports 30+ languages.
-          </p>
         </div>
 
         <!-- Script input card -->
-        <div class="script-card">
-          <div class="card-inner">
+        <div class="script-card h-full">
+          <div
+            class="card-inner h-full overflow-scroll"
+            @keydown="handleCardKeydown"
+          >
             <!-- Title input -->
             <div class="input-group input-group--title">
-              <label for="script-title" class="input-label">Title</label>
+              <label
+                for="script-title"
+                class="input-label"
+              >{{ $t('welcome.titleLabel') }}</label>
               <input
                 id="script-title"
                 v-model="title"
                 type="text"
                 class="title-input"
-                placeholder="Give your script a name..."
-              />
+                :placeholder="$t('welcome.titlePlaceholder')"
+              >
             </div>
 
-            <!-- Content textarea -->
-            <div class="input-group input-group--content">
-              <label for="script-content" class="input-label">
-                Your Script
-                <span v-if="wordCount > 0" class="word-counter">
-                  {{ wordCount }} {{ wordCount === 1 ? 'word' : 'words' }}
+            <!-- Content editor -->
+            <div class="input-group input-group--content h-full">
+              <label
+                for="script-content"
+                class="input-label"
+              >
+                {{ $t('welcome.contentLabel') }}
+                <span
+                  v-if="wordCount > 0"
+                  class="word-counter"
+                >
+                  {{ $t('welcome.wordCount', { count: wordCount }, wordCount) }}
                 </span>
               </label>
-              <textarea
-                id="script-content"
-                ref="contentRef"
-                v-model="content"
-                class="content-textarea"
-                placeholder="Paste or type your script here...
-
-Try a speech, poem, presentation notes, or any text you want to practice reading aloud."
-                @keydown.meta.enter="handleStart"
-                @keydown.ctrl.enter="handleStart"
-              />
+              <div class="editor-wrapper h-full">
+                <ClientOnly>
+                  <RichTextEditor
+                    v-model="contentHtml"
+                    :placeholder="$t('welcome.contentPlaceholder')"
+                  />
+                  <template #fallback>
+                    <div class="editor-loading">
+                      <div class="editor-loading__spinner" />
+                      <span>{{ $t('editor.loadingEditor') }}</span>
+                    </div>
+                  </template>
+                </ClientOnly>
+              </div>
             </div>
 
             <!-- Start button -->
@@ -163,13 +185,21 @@ Try a speech, poem, presentation notes, or any text you want to practice reading
               >
                 <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                <line x1="12" x2="12" y1="19" y2="22" />
+                <line
+                  x1="12"
+                  x2="12"
+                  y1="19"
+                  y2="22"
+                />
               </svg>
-              Start Reading
+              {{ $t('welcome.startButton') }}
             </button>
 
             <!-- Browser support warning -->
-            <p v-if="!isSupported" class="browser-warning">
+            <p
+              v-if="!isSupported"
+              class="browser-warning"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="14"
@@ -181,19 +211,39 @@ Try a speech, poem, presentation notes, or any text you want to practice reading
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" x2="12" y1="8" y2="12" />
-                <line x1="12" x2="12.01" y1="16" y2="16" />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                />
+                <line
+                  x1="12"
+                  x2="12"
+                  y1="8"
+                  y2="12"
+                />
+                <line
+                  x1="12"
+                  x2="12.01"
+                  y1="16"
+                  y2="16"
+                />
               </svg>
-              Speech recognition works best in Chrome, Edge, or Safari.
+              {{ $t('welcome.browserWarning') }}
             </p>
           </div>
         </div>
 
         <!-- Subtle hint -->
-        <p class="keyboard-hint">
-          <kbd>{{ isMac ? '⌘' : 'Ctrl' }}</kbd> + <kbd>Enter</kbd> to start
-        </p>
+        <i18n-t
+          tag="p"
+          class="keyboard-hint"
+          keypath="welcome.keyboardHint"
+        >
+          <template #keys>
+            <kbd>{{ isMac ? '⌘' : 'Ctrl' }}</kbd> + <kbd>Enter</kbd>
+          </template>
+        </i18n-t>
       </div>
     </main>
   </div>
@@ -321,14 +371,6 @@ Try a speech, poem, presentation notes, or any text you want to practice reading
   color: var(--accent);
 }
 
-.hero-description {
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  color: var(--text-secondary);
-  max-width: 400px;
-  margin: 0 auto;
-}
-
 /* Script card */
 .script-card {
   background: var(--surface-elevated);
@@ -394,29 +436,48 @@ Try a speech, poem, presentation notes, or any text you want to practice reading
   font-weight: 400;
 }
 
-.content-textarea {
-  width: 100%;
+:deep(.rich-text-editor) {
+  height: 100%;
+  position: relative;
+  .ck-editor {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    .ck-editor__main {
+      height: 100%;
+      .ck-content {
+        height: 100%;
+      }
+    }
+  }
+}
+
+.editor-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
   min-height: 140px;
-  padding: 0.75rem;
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: 0.5rem;
-  font-family: var(--font-script);
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--text-primary);
-  resize: none;
-  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
-.content-textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-ring);
+.editor-loading__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.content-textarea::placeholder {
-  color: var(--text-tertiary);
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Start button */
@@ -520,17 +581,9 @@ Try a speech, poem, presentation notes, or any text you want to practice reading
     font-size: 1.75rem;
   }
 
-  .hero-description {
-    font-size: 0.875rem;
-  }
-
   .card-inner {
     padding: 1rem;
     gap: 0.875rem;
-  }
-
-  .content-textarea {
-    min-height: 120px;
   }
 
   .keyboard-hint {

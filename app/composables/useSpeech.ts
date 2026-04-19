@@ -1,3 +1,5 @@
+import { speechLangToI18nLocale } from '~/utils/languageMapping'
+
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList
   resultIndex: number
@@ -21,6 +23,11 @@ interface SpeechRecognitionAlternative {
   confidence: number
 }
 
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string
+  message?: string
+}
+
 interface SpeechRecognition extends EventTarget {
   continuous: boolean
   interimResults: boolean
@@ -30,7 +37,7 @@ interface SpeechRecognition extends EventTarget {
   stop(): void
   abort(): void
   onresult: ((event: SpeechRecognitionEvent) => void) | null
-  onerror: ((event: Event & { error: string }) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
   onend: (() => void) | null
   onstart: (() => void) | null
 }
@@ -48,7 +55,41 @@ export interface SpeechResult {
   isFinal: boolean
 }
 
+// Errors we treat as transient and should silently recover from.
+// See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognitionErrorEvent/error
+const SILENT_ERRORS = new Set(['no-speech', 'aborted'])
+
+// Errors that indicate a misconfiguration the user must fix — stop retrying
+// so we don't loop on a permission denial or an unsupported language.
+const FATAL_ERRORS = new Set([
+  'not-allowed',
+  'service-not-allowed',
+  'audio-capture',
+  'language-not-supported',
+  'bad-grammar',
+])
+
+// Error codes we have dedicated translations for. Anything outside this
+// set falls through to `speech.errors.unknown`.
+const KNOWN_ERROR_CODES = new Set([
+  'no-speech',
+  'aborted',
+  'audio-capture',
+  'network',
+  'not-allowed',
+  'service-not-allowed',
+  'bad-grammar',
+  'language-not-supported',
+  'not-available',
+])
+
 export const useSpeech = () => {
+  const { t, setLocale } = useI18n()
+  const translateError = (code: string): string => {
+    const key = KNOWN_ERROR_CODES.has(code) ? code : 'unknown'
+    return t(`speech.errors.${key}`)
+  }
+
   const isListening = ref(false)
   const isSupported = ref(false)
   const transcript = ref('')
@@ -88,7 +129,7 @@ export const useSpeech = () => {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognitionAPI) {
       isSupported.value = false
-      error.value = 'Speech recognition is not supported in this browser'
+      error.value = translateError('not-available')
       return
     }
 
@@ -115,12 +156,11 @@ export const useSpeech = () => {
         const alternative = result[0]
         if (!alternative) continue
 
-        // console.log({ alternative })
-
         if (result.isFinal) {
           final += alternative.transcript
           confidence.value = alternative.confidence
-        } else {
+        }
+        else {
           interim += alternative.transcript
         }
       }
@@ -135,13 +175,15 @@ export const useSpeech = () => {
     }
 
     recognition.onerror = (event) => {
-      if (event.error === 'no-speech') {
-        return
+      if (SILENT_ERRORS.has(event.error)) return
+
+      error.value = translateError(event.error)
+
+      // Stop auto-restart for errors the user must address (permission, hardware,
+      // unsupported language) so we don't loop and keep failing.
+      if (FATAL_ERRORS.has(event.error)) {
+        shouldRestart = false
       }
-      if (event.error === 'aborted') {
-        return
-      }
-      error.value = `Speech recognition error: ${event.error}`
       isListening.value = false
     }
 
@@ -169,7 +211,8 @@ export const useSpeech = () => {
 
     try {
       recognition.start()
-    } catch (e) {
+    }
+    catch (e) {
       if ((e as Error).message?.includes('already started')) {
         return
       }
@@ -189,7 +232,8 @@ export const useSpeech = () => {
   const toggle = () => {
     if (isListening.value) {
       stop()
-    } else {
+    }
+    else {
       start()
     }
   }
@@ -207,6 +251,9 @@ export const useSpeech = () => {
     if (recognition) {
       recognition.lang = lang
     }
+    // Keep the app's UI locale in lockstep with the speech-recognition language.
+    const i18nLocale = speechLangToI18nLocale(lang)
+    void setLocale(i18nLocale)
   }
 
   onMounted(() => {
@@ -230,6 +277,6 @@ export const useSpeech = () => {
     stop,
     toggle,
     reset,
-    setLanguage
+    setLanguage,
   }
 }

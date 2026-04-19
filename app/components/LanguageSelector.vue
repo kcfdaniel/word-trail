@@ -46,7 +46,8 @@ const languages = [
   { code: 'el-GR', name: 'Greek', native: 'Ελληνικά', flag: '🇬🇷' },
   { code: 'he-IL', name: 'Hebrew', native: 'עברית', flag: '🇮🇱' },
   { code: 'uk-UA', name: 'Ukrainian', native: 'Українська', flag: '🇺🇦' },
-  { code: 'yue-Hant-HK', name: 'Cantonese', native: '廣東話', flag: '🇭🇰' }
+  { code: 'yue-HK', name: 'Cantonese', native: '廣東話', flag: '🇭🇰' },
+  { code: 'yue-Hant-HK', name: 'Cantonese', native: '廣東話', flag: '🇭🇰' },
 ]
 
 const currentLang = computed(() => {
@@ -60,7 +61,7 @@ const filteredLanguages = computed(() => {
   return languages.filter(lang =>
     lang.name.toLowerCase().includes(query)
     || lang.native.toLowerCase().includes(query)
-    || lang.code.toLowerCase().includes(query)
+    || lang.code.toLowerCase().includes(query),
   )
 })
 
@@ -72,7 +73,8 @@ watch(filteredLanguages, (newFiltered) => {
 const toggleDropdown = () => {
   if (isOpen.value) {
     closeDropdown()
-  } else {
+  }
+  else {
     isOpen.value = true
     searchQuery.value = ''
     highlightedIndex.value = -1
@@ -101,10 +103,11 @@ const handleKeydown = (event: KeyboardEvent) => {
       // Start from 0 if nothing highlighted, otherwise increment
       if (highlightedIndex.value < 0) {
         highlightedIndex.value = 0
-      } else {
+      }
+      else {
         highlightedIndex.value = Math.min(
           highlightedIndex.value + 1,
-          filteredLanguages.value.length - 1
+          filteredLanguages.value.length - 1,
         )
       }
       scrollToHighlighted()
@@ -114,7 +117,8 @@ const handleKeydown = (event: KeyboardEvent) => {
       // Start from last item if nothing highlighted, otherwise decrement
       if (highlightedIndex.value < 0) {
         highlightedIndex.value = filteredLanguages.value.length - 1
-      } else {
+      }
+      else {
         highlightedIndex.value = Math.max(highlightedIndex.value - 1, 0)
       }
       scrollToHighlighted()
@@ -166,7 +170,7 @@ onUnmounted(() => {
     <button
       class="selector-button"
       :class="{ 'selector-button--open': isOpen }"
-      :title="`Language: ${currentLang?.native}`"
+      :title="$t('languageSelector.tooltip', { name: currentLang?.native })"
       @click="toggleDropdown"
     >
       <span class="selector-flag">{{ currentLang?.flag }}</span>
@@ -217,7 +221,7 @@ onUnmounted(() => {
             v-model="searchQuery"
             type="text"
             class="search-input"
-            placeholder="Search languages..."
+            :placeholder="$t('languageSelector.searchPlaceholder')"
             @keydown="handleKeydown"
           >
         </div>
@@ -228,7 +232,7 @@ onUnmounted(() => {
             class="dropdown-item"
             :class="{
               'dropdown-item--selected': lang.code === currentLanguage,
-              'dropdown-item--highlighted': index === highlightedIndex
+              'dropdown-item--highlighted': index === highlightedIndex,
             }"
             @click="selectLanguage(lang.code)"
             @mouseenter="highlightedIndex = index"
@@ -258,7 +262,7 @@ onUnmounted(() => {
             v-if="filteredLanguages.length === 0"
             class="dropdown-empty"
           >
-            No languages found
+            {{ $t('languageSelector.empty') }}
           </div>
         </div>
       </div>

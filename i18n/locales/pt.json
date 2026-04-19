@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "Cancelar",
+    "save": "Salvar alterações",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "close": "Fechar",
+    "untitledScript": "Roteiro sem título"
+  },
+  "welcome": {
+    "badge": "Teleprompter ativado por voz",
+    "titleStart": "Fale naturalmente.",
+    "titleAccent": "O texto acompanha você.",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Dê um nome ao seu roteiro...",
+    "contentLabel": "Seu roteiro",
+    "contentPlaceholder": "Cole ou digite seu roteiro aqui...\n\nExperimente um discurso, poema, notas de apresentação ou qualquer texto que queira praticar em voz alta.",
+    "startButton": "Começar a ler",
+    "browserWarning": "O reconhecimento de fala funciona melhor no Chrome, Edge ou Safari.",
+    "firstScriptTitle": "Meu primeiro roteiro",
+    "keyboardHint": "{keys} para começar",
+    "wordCount": "{count} palavra | {count} palavras"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "Buscar idiomas...",
+    "tooltip": "Idioma: {name}",
+    "empty": "Nenhum idioma encontrado"
+  },
+  "scripts": {
+    "pageTitle": "Roteiros",
+    "searchPlaceholder": "Buscar roteiros...",
+    "newButton": "Novo",
+    "noResults": "Nenhum roteiro corresponde a \"{query}\"",
+    "newScriptTitle": "Novo roteiro",
+    "editScriptTitle": "Editar roteiro",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Digite o título do roteiro...",
+    "contentLabel": "Conteúdo do roteiro",
+    "contentPlaceholder": "Cole ou digite seu roteiro aqui...",
+    "createButton": "Criar roteiro",
+    "deleteConfirm": "Excluir \"{title}\"? Esta ação não pode ser desfeita.",
+    "unsavedConfirm": "Você tem alterações não salvas. Deseja descartá-las?",
+    "wordCount": "{count} palavra | {count} palavras"
+  },
+  "reader": {
+    "backToScripts": "Voltar aos roteiros",
+    "toggleDebug": "Alternar painel de depuração",
+    "resetProgress": "Redefinir progresso",
+    "editScript": "Editar roteiro",
+    "apiWarning": "Seu navegador não suporta destaque avançado. Usando modo simplificado."
+  },
+  "editor": {
+    "editTitle": "Editar roteiro",
+    "loadingEditor": "Carregando editor...",
+    "editorPlaceholder": "Cole ou digite seu roteiro aqui... Você pode colar direto do Google Docs!",
+    "tip": "Dica: cole do Google Docs para preservar a formatação"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "Nenhuma fala detectada. Tente novamente.",
+      "aborted": "Escuta interrompida.",
+      "audio-capture": "Microfone indisponível. Verifique o dispositivo de áudio.",
+      "network": "Erro de rede. Verifique a conexão e tente novamente.",
+      "not-allowed": "Permissão do microfone negada. Permita o acesso nas configurações do navegador.",
+      "service-not-allowed": "Reconhecimento de fala bloqueado. Use HTTPS e autorize o microfone.",
+      "bad-grammar": "Erro de gramática do reconhecimento de fala.",
+      "language-not-supported": "Este navegador não suporta o idioma selecionado.",
+      "not-available": "O reconhecimento de fala não está disponível neste navegador. Experimente Chrome, Edge ou Safari.",
+      "unknown": "Erro no reconhecimento de fala."
+    }
+  }
+}

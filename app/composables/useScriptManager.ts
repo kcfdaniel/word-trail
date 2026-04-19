@@ -1,4 +1,5 @@
 import { useStorage } from '@vueuse/core'
+import { randomUUID } from '~/utils/id'
 import { plainTextToHtml } from '~/utils/richText'
 
 export interface Script {
@@ -32,7 +33,7 @@ const normalizeScript = (script: Partial<Script> & { content?: string }): Script
     : plainTextToHtml(content)
 
   return {
-    id: String(script?.id ?? crypto.randomUUID()),
+    id: String(script?.id ?? randomUUID()),
     title: typeof script?.title === 'string' ? script.title : 'Untitled Script',
     contentHtml,
     createdAt: typeof script?.createdAt === 'number' ? script.createdAt : Date.now(),
@@ -62,7 +63,7 @@ export const useScriptManager = () => {
 
   const createScript = (title: string, contentHtml: string): Script => {
     const script: Script = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       title: title || 'Untitled Script',
       contentHtml,
       createdAt: Date.now(),

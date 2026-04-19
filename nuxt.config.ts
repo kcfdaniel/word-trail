@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@nuxt/scripts',
     '@nuxt/test-utils',
+    '@nuxtjs/i18n',
     '@vite-pwa/nuxt',
   ],
 
@@ -41,6 +42,29 @@ export default defineNuxtConfig({
     config: {
       stylistic: true,
     },
+  },
+
+  i18n: {
+    defaultLocale: 'en',
+    strategy: 'no_prefix',
+    lazy: true,
+    // We drive locale selection off the stored speech-recognition language,
+    // not URL or browser detection.
+    detectBrowserLanguage: false,
+    locales: [
+      { code: 'en', language: 'en-US', file: 'en.json', name: 'English' },
+      { code: 'zh-CN', language: 'zh-CN', file: 'zh-CN.json', name: '简体中文' },
+      { code: 'zh-TW', language: 'zh-TW', file: 'zh-TW.json', name: '繁體中文' },
+      { code: 'es', language: 'es-ES', file: 'es.json', name: 'Español' },
+      { code: 'fr', language: 'fr-FR', file: 'fr.json', name: 'Français' },
+      { code: 'de', language: 'de-DE', file: 'de.json', name: 'Deutsch' },
+      { code: 'it', language: 'it-IT', file: 'it.json', name: 'Italiano' },
+      { code: 'pt', language: 'pt-BR', file: 'pt.json', name: 'Português' },
+      { code: 'ja', language: 'ja-JP', file: 'ja.json', name: '日本語' },
+      { code: 'ko', language: 'ko-KR', file: 'ko.json', name: '한국어' },
+      { code: 'ru', language: 'ru-RU', file: 'ru.json', name: 'Русский' },
+      { code: 'nl', language: 'nl-NL', file: 'nl.json', name: 'Nederlands' },
+    ],
   },
 
   pwa: {

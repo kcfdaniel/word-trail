@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "取消",
+    "save": "儲存變更",
+    "edit": "編輯",
+    "delete": "刪除",
+    "close": "關閉",
+    "untitledScript": "未命名腳本"
+  },
+  "welcome": {
+    "badge": "語音驅動提詞機",
+    "titleStart": "自然開口。",
+    "titleAccent": "文字自動跟隨。",
+    "titleLabel": "標題",
+    "titlePlaceholder": "為你的腳本取個名字……",
+    "contentLabel": "你的腳本",
+    "contentPlaceholder": "在此貼上或輸入你的腳本……\n\n可以試試演講稿、詩、簡報筆記,或任何想練習朗讀的文字。",
+    "startButton": "開始朗讀",
+    "browserWarning": "語音辨識在 Chrome、Edge 或 Safari 上效果最佳。",
+    "firstScriptTitle": "我的第一個腳本",
+    "keyboardHint": "按 {keys} 開始",
+    "wordCount": "{count} 個字"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "搜尋語言……",
+    "tooltip": "語言:{name}",
+    "empty": "找不到語言"
+  },
+  "scripts": {
+    "pageTitle": "腳本",
+    "searchPlaceholder": "搜尋腳本……",
+    "newButton": "新增",
+    "noResults": "找不到符合「{query}」的腳本",
+    "newScriptTitle": "新增腳本",
+    "editScriptTitle": "編輯腳本",
+    "titleLabel": "標題",
+    "titlePlaceholder": "輸入腳本標題……",
+    "contentLabel": "腳本內容",
+    "contentPlaceholder": "在此貼上或輸入你的腳本……",
+    "createButton": "建立腳本",
+    "deleteConfirm": "確定要刪除「{title}」嗎?此動作無法復原。",
+    "unsavedConfirm": "你有尚未儲存的變更。確定要放棄嗎?",
+    "wordCount": "{count} 個字"
+  },
+  "reader": {
+    "backToScripts": "返回腳本清單",
+    "toggleDebug": "切換除錯面板",
+    "resetProgress": "重設進度",
+    "editScript": "編輯腳本",
+    "apiWarning": "此瀏覽器不支援進階高亮功能,已切換至簡化模式。"
+  },
+  "editor": {
+    "editTitle": "編輯腳本",
+    "loadingEditor": "載入編輯器中……",
+    "editorPlaceholder": "在此貼上或輸入你的腳本……可直接從 Google Docs 貼上!",
+    "tip": "提示:從 Google Docs 貼上可保留格式"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "未偵測到語音,請再試一次。",
+      "aborted": "已停止收音。",
+      "audio-capture": "無法使用麥克風,請檢查音訊裝置。",
+      "network": "網路錯誤,請檢查網路連線。",
+      "not-allowed": "麥克風權限被拒絕,請在瀏覽器設定中允許存取。",
+      "service-not-allowed": "語音辨識被封鎖,請使用 HTTPS 並授權麥克風。",
+      "bad-grammar": "語音辨識文法錯誤。",
+      "language-not-supported": "此瀏覽器不支援所選語言。",
+      "not-available": "此瀏覽器不支援語音辨識,請使用 Chrome、Edge 或 Safari。",
+      "unknown": "語音辨識發生錯誤。"
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "Annuleren",
+    "save": "Wijzigingen opslaan",
+    "edit": "Bewerken",
+    "delete": "Verwijderen",
+    "close": "Sluiten",
+    "untitledScript": "Naamloos script"
+  },
+  "welcome": {
+    "badge": "Stembediende teleprompter",
+    "titleStart": "Spreek natuurlijk.",
+    "titleAccent": "De tekst volgt je.",
+    "titleLabel": "Titel",
+    "titlePlaceholder": "Geef je script een naam...",
+    "contentLabel": "Jouw script",
+    "contentPlaceholder": "Plak of typ je script hier...\n\nProbeer een toespraak, gedicht, presentatienotities of elke tekst die je hardop wilt oefenen.",
+    "startButton": "Beginnen met lezen",
+    "browserWarning": "Spraakherkenning werkt het best in Chrome, Edge of Safari.",
+    "firstScriptTitle": "Mijn eerste script",
+    "keyboardHint": "{keys} om te starten",
+    "wordCount": "{count} woord | {count} woorden"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "Talen zoeken...",
+    "tooltip": "Taal: {name}",
+    "empty": "Geen talen gevonden"
+  },
+  "scripts": {
+    "pageTitle": "Scripts",
+    "searchPlaceholder": "Scripts zoeken...",
+    "newButton": "Nieuw",
+    "noResults": "Geen scripts gevonden voor \"{query}\"",
+    "newScriptTitle": "Nieuw script",
+    "editScriptTitle": "Script bewerken",
+    "titleLabel": "Titel",
+    "titlePlaceholder": "Voer de titel van het script in...",
+    "contentLabel": "Scriptinhoud",
+    "contentPlaceholder": "Plak of typ je script hier...",
+    "createButton": "Script maken",
+    "deleteConfirm": "\"{title}\" verwijderen? Dit kan niet ongedaan worden gemaakt.",
+    "unsavedConfirm": "Je hebt niet-opgeslagen wijzigingen. Weggooien?",
+    "wordCount": "{count} woord | {count} woorden"
+  },
+  "reader": {
+    "backToScripts": "Terug naar scripts",
+    "toggleDebug": "Debugpaneel in-/uitschakelen",
+    "resetProgress": "Voortgang resetten",
+    "editScript": "Script bewerken",
+    "apiWarning": "Je browser ondersteunt geen geavanceerde markering. Vereenvoudigde modus is actief."
+  },
+  "editor": {
+    "editTitle": "Script bewerken",
+    "loadingEditor": "Editor laden...",
+    "editorPlaceholder": "Plak of typ je script hier... Je kunt direct uit Google Docs plakken!",
+    "tip": "Tip: plak uit Google Docs om de opmaak te behouden"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "Geen spraak gedetecteerd. Probeer het opnieuw.",
+      "aborted": "Luisteren gestopt.",
+      "audio-capture": "Microfoon niet beschikbaar. Controleer je audioapparaat.",
+      "network": "Netwerkfout. Controleer je verbinding en probeer het opnieuw.",
+      "not-allowed": "Microfoontoegang geweigerd. Geef toegang in de browserinstellingen.",
+      "service-not-allowed": "Spraakherkenning geblokkeerd. Gebruik HTTPS en sta de microfoon toe.",
+      "bad-grammar": "Grammaticafout bij spraakherkenning.",
+      "language-not-supported": "Deze browser ondersteunt de geselecteerde taal niet.",
+      "not-available": "Spraakherkenning is niet beschikbaar in deze browser. Probeer Chrome, Edge of Safari.",
+      "unknown": "Spraakherkenningsfout."
+    }
+  }
+}

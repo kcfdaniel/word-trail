@@ -1,0 +1,72 @@
+{
+  "common": {
+    "cancel": "취소",
+    "save": "변경사항 저장",
+    "edit": "편집",
+    "delete": "삭제",
+    "close": "닫기",
+    "untitledScript": "제목 없는 스크립트"
+  },
+  "welcome": {
+    "badge": "음성 제어 텔레프롬프터",
+    "titleStart": "자연스럽게 말하세요.",
+    "titleAccent": "텍스트가 따라옵니다.",
+    "titleLabel": "제목",
+    "titlePlaceholder": "스크립트 이름을 입력하세요...",
+    "contentLabel": "내 스크립트",
+    "contentPlaceholder": "여기에 스크립트를 붙여넣거나 입력하세요...\n\n연설, 시, 발표 메모 등 소리 내어 연습하고 싶은 텍스트를 입력해 보세요.",
+    "startButton": "읽기 시작",
+    "browserWarning": "음성 인식은 Chrome, Edge, Safari 에서 가장 잘 작동합니다.",
+    "firstScriptTitle": "첫 번째 스크립트",
+    "keyboardHint": "{keys} 로 시작",
+    "wordCount": "{count} 단어"
+  },
+  "languageSelector": {
+    "searchPlaceholder": "언어 검색...",
+    "tooltip": "언어: {name}",
+    "empty": "언어를 찾을 수 없습니다"
+  },
+  "scripts": {
+    "pageTitle": "스크립트",
+    "searchPlaceholder": "스크립트 검색...",
+    "newButton": "새로 만들기",
+    "noResults": "\"{query}\"와 일치하는 스크립트가 없습니다",
+    "newScriptTitle": "새 스크립트",
+    "editScriptTitle": "스크립트 편집",
+    "titleLabel": "제목",
+    "titlePlaceholder": "스크립트 제목을 입력하세요...",
+    "contentLabel": "스크립트 내용",
+    "contentPlaceholder": "여기에 스크립트를 붙여넣거나 입력하세요...",
+    "createButton": "스크립트 만들기",
+    "deleteConfirm": "\"{title}\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
+    "unsavedConfirm": "저장하지 않은 변경사항이 있습니다. 취소하시겠습니까?",
+    "wordCount": "{count} 단어"
+  },
+  "reader": {
+    "backToScripts": "스크립트 목록으로",
+    "toggleDebug": "디버그 패널 전환",
+    "resetProgress": "진행 초기화",
+    "editScript": "스크립트 편집",
+    "apiWarning": "이 브라우저는 고급 하이라이트를 지원하지 않습니다. 단순 모드를 사용합니다."
+  },
+  "editor": {
+    "editTitle": "스크립트 편집",
+    "loadingEditor": "에디터 로드 중...",
+    "editorPlaceholder": "여기에 스크립트를 붙여넣거나 입력하세요... Google Docs 에서 바로 붙여넣기 가능!",
+    "tip": "팁: Google Docs 에서 붙여넣으면 서식이 유지됩니다"
+  },
+  "speech": {
+    "errors": {
+      "no-speech": "음성이 감지되지 않았습니다. 다시 시도해 주세요.",
+      "aborted": "청취가 중지되었습니다.",
+      "audio-capture": "마이크를 사용할 수 없습니다. 오디오 장치를 확인하세요.",
+      "network": "네트워크 오류입니다. 연결을 확인하세요.",
+      "not-allowed": "마이크 권한이 거부되었습니다. 브라우저 설정에서 접근을 허용하세요.",
+      "service-not-allowed": "음성 인식이 차단되었습니다. HTTPS 를 사용하고 마이크 권한을 허용하세요.",
+      "bad-grammar": "음성 인식 문법 오류입니다.",
+      "language-not-supported": "이 브라우저는 선택한 언어를 지원하지 않습니다.",
+      "not-available": "이 브라우저는 음성 인식을 지원하지 않습니다. Chrome, Edge, Safari 를 사용해 보세요.",
+      "unknown": "음성 인식 오류가 발생했습니다."
+    }
+  }
+}
