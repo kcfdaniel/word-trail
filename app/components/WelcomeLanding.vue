@@ -273,7 +273,7 @@ const handleCardKeydown = (event: KeyboardEvent) => {
   padding: 0 1.5rem 1.5rem;
   position: relative;
   z-index: 1;
-  min-height: 0;
+  height: 100%;
 }
 
 .landing-content {
