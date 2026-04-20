@@ -270,7 +270,7 @@ const handleCardKeydown = (event: KeyboardEvent) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 1.5rem 1.5rem;
+  padding: 1.5rem;
   position: relative;
   z-index: 1;
   height: 100%;
