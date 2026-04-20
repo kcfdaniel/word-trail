@@ -46,7 +46,9 @@ useSeoMeta({
 <template>
   <UApp>
     <div class="wordtrail-app">
-      <NuxtPage />
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
     </div>
   </UApp>
 </template>
