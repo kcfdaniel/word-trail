@@ -5,6 +5,17 @@ import { htmlToPlainText } from '~/utils/richText'
 const router = useRouter()
 const { t } = useI18n()
 
+const pushAd = () => {
+  try {
+    const w = window as unknown as { adsbygoogle?: unknown[] }
+    w.adsbygoogle = w.adsbygoogle || []
+    w.adsbygoogle.push({})
+  }
+  catch (e) {
+    console.error('AdSense push failed:', e)
+  }
+}
+
 const {
   scripts,
   currentScript,
@@ -140,6 +151,7 @@ const handleBeforeUnload = (event: BeforeUnloadEvent) => {
 
 onMounted(() => {
   window.addEventListener('beforeunload', handleBeforeUnload)
+  nextTick(pushAd)
 })
 
 onBeforeUnmount(() => {
@@ -313,6 +325,18 @@ onBeforeRouteLeave(() => {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Bottom ad banner -->
+        <div class="ad-banner">
+          <ins
+            class="adsbygoogle"
+            style="display:block; width:100%;"
+            data-ad-client="ca-pub-1449646914986604"
+            data-ad-slot="YOUR_AD_SLOT_ID"
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+          />
         </div>
       </div>
     </Transition>
@@ -530,6 +554,21 @@ onBeforeRouteLeave(() => {
   flex: 1;
   overflow-y: auto;
   padding: 1rem 1.5rem 1.5rem;
+}
+
+.ad-banner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  padding: 0.5rem 1rem;
+  background: var(--surface-elevated);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ad-banner .adsbygoogle {
+  max-width: 100%;
 }
 
 .toolbar {
