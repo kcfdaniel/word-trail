@@ -100,7 +100,7 @@ const closeReader = () => {
 }
 
 .landing-page {
-  min-height: 100dvh;
+  height: 100dvh;
   background: var(--surface);
 }
 
