@@ -2,6 +2,7 @@
 import { useStorage } from '@vueuse/core'
 
 const { language, setLanguage } = useSpeech()
+const { scripts } = useScriptManager()
 
 const languageStorage = useStorage('wordtrail-language', 'en-US', undefined, {
   listenToStorageChanges: true,
@@ -15,13 +16,15 @@ const handleLanguageSelect = (lang: string) => {
   setLanguage(lang)
   languageStorage.value = lang
 }
+
+const logoLink = computed(() => (scripts.value.length > 0 ? '/scripts' : '/'))
 </script>
 
 <template>
   <div class="app-layout">
     <AppHeader>
       <NuxtLink
-        to="/"
+        :to="logoLink"
         class="app-layout-brand"
         aria-label="WordTrail home"
       >
