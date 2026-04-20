@@ -1,10 +1,15 @@
 <script setup lang="ts">
+const colorMode = useColorMode()
+
+const themeColor = computed(() => colorMode.value === 'dark' ? '#0f0e0d' : '#faf8f5')
+const statusBarStyle = computed(() => colorMode.value === 'dark' ? 'black-translucent' : 'default')
+
 useHead({
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' },
-    { name: 'theme-color', content: '#1a1a1a' },
+    { name: 'theme-color', content: themeColor },
     { name: 'apple-mobile-web-app-capable', content: 'yes' },
-    { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
+    { name: 'apple-mobile-web-app-status-bar-style', content: statusBarStyle }
   ],
   link: [
     { rel: 'icon', href: '/favicon.ico' },
