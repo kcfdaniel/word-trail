@@ -181,17 +181,6 @@ onBeforeRouteLeave(() => {
         v-else
         class="page-loaded"
       >
-        <!-- Header -->
-        <header class="page-header">
-          <div class="header-left">
-            <img
-              src="/app-logo.png"
-              alt="WordTrail"
-              class="app-logo"
-            >
-          </div>
-        </header>
-
         <!-- Page Title -->
         <div class="page-title-section">
           <h1 class="page-title">
@@ -456,7 +445,7 @@ onBeforeRouteLeave(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100dvh;
+  height: 100%;
   background: var(--surface);
 }
 
@@ -514,61 +503,14 @@ onBeforeRouteLeave(() => {
 .page-loaded {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: 100%;
 }
 
 .scripts-page {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: 100%;
   background: var(--surface);
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1.25rem;
-  background: var(--header-bg);
-  border-bottom: 1px solid var(--border-subtle);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.app-logo {
-  height: 32px;
-  width: auto;
-  object-fit: contain;
-}
-
-.header-right {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.header-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: transparent;
-  border: none;
-  border-radius: 0.5rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.header-button:hover {
-  background: var(--button-secondary-bg);
-  color: var(--text-primary);
 }
 
 .page-title-section {
@@ -880,10 +822,6 @@ onBeforeRouteLeave(() => {
 }
 
 @media (max-width: 640px) {
-  .page-header {
-    padding: 0.625rem 1rem;
-  }
-
   .page-content {
     padding: 1rem;
   }

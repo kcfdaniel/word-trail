@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useStorage } from '@vueuse/core'
 import { htmlToPlainText } from '~/utils/richText'
 
 const emit = defineEmits<{
@@ -8,20 +9,15 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const { isSupported, language, setLanguage } = useSpeech()
 
-// Persist language selection to localStorage
-const LANGUAGE_STORAGE_KEY = 'wordtrail-language'
-
-onMounted(() => {
-  const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY)
-  if (savedLanguage) {
-    setLanguage(savedLanguage)
-  }
+// Keep this instance in sync with the shared localStorage-backed language,
+// since the language selector now lives in the default layout header.
+const languageStorage = useStorage('wordtrail-language', 'en-US', undefined, {
+  listenToStorageChanges: true,
 })
 
-const handleLanguageSelect = (lang: string) => {
-  setLanguage(lang)
-  localStorage.setItem(LANGUAGE_STORAGE_KEY, lang)
-}
+watch(languageStorage, (saved) => {
+  if (saved) setLanguage(saved)
+}, { immediate: true })
 
 const title = ref(t('welcome.firstScriptTitle'))
 const contentHtml = ref('')
@@ -62,23 +58,6 @@ const handleCardKeydown = (event: KeyboardEvent) => {
     <!-- Ambient background elements -->
     <div class="ambient-glow ambient-glow--1" />
     <div class="ambient-glow ambient-glow--2" />
-
-    <!-- Header -->
-    <header class="landing-header">
-      <div class="header-brand">
-        <img
-          src="/app-logo.png"
-          alt="WordTrail"
-          class="brand-logo"
-        >
-      </div>
-      <div class="header-actions">
-        <LanguageSelector
-          :current-language="language"
-          @select="handleLanguageSelect"
-        />
-      </div>
-    </header>
 
     <!-- Main content -->
     <main class="landing-main">
@@ -251,7 +230,7 @@ const handleCardKeydown = (event: KeyboardEvent) => {
 
 <style scoped>
 .welcome-landing {
-  height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--surface);
@@ -283,33 +262,6 @@ const handleCardKeydown = (event: KeyboardEvent) => {
   background: radial-gradient(circle, rgba(217, 119, 6, 0.1) 0%, transparent 70%);
   bottom: -150px;
   left: -100px;
-}
-
-/* Header */
-.landing-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1.5rem;
-  position: relative;
-  z-index: 10;
-  flex-shrink: 0;
-}
-
-.header-brand {
-  display: flex;
-  align-items: center;
-}
-
-.brand-logo {
-  height: 28px;
-  width: auto;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
 }
 
 /* Main content */
@@ -561,14 +513,6 @@ const handleCardKeydown = (event: KeyboardEvent) => {
 
 /* Mobile adjustments */
 @media (max-width: 640px) {
-  .landing-header {
-    padding: 0.625rem 1rem;
-  }
-
-  .brand-logo {
-    height: 26px;
-  }
-
   .landing-main {
     padding: 0 1rem 1rem;
   }

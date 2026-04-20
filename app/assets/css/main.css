@@ -86,7 +86,7 @@
 
   /* Word States - Dark */
   --word-pending: #d4cfc4;
-  --word-completed: #5c564d;
+  --word-completed: #8a8478;
   --word-active-text: #fef9f0;
   --word-active-bg: rgba(251, 191, 36, 0.2);
   --word-active-glow: rgba(251, 191, 36, 0.35);

@@ -291,6 +291,7 @@ const handleReset = () => {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 3rem 2rem;
+  padding-top: 0;
   scroll-behavior: smooth;
   min-height: 0;
   cursor: pointer;
@@ -305,7 +306,7 @@ const handleReset = () => {
   width: 100%;
 }
 
-.script-container :deep(.ck.ck-toolbar) {
+.script-container :deep(.ck.ck-editor__top) {
   display: none;
 }
 

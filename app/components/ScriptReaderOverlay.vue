@@ -150,33 +150,31 @@ onUnmounted(() => {
     :class="{ 'reader-overlay--debug': showDebugPanel }"
   >
     <!-- Header -->
-    <header class="app-header">
-      <div class="header-left">
-        <button
-          class="back-button"
-          :title="$t('reader.backToScripts')"
-          @click="goBack"
+    <AppHeader>
+      <button
+        class="back-button"
+        :title="$t('reader.backToScripts')"
+        @click="goBack"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-        </button>
-        <span class="current-script-name">
-          {{ currentScript?.title }}
-        </span>
-      </div>
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+      </button>
+      <span class="current-script-name">
+        {{ currentScript?.title }}
+      </span>
 
-      <div class="header-right">
+      <template #right>
         <LanguageSelector
           :current-language="language"
           @select="handleLanguageSelect"
@@ -213,8 +211,8 @@ onUnmounted(() => {
             <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4" />
           </svg>
         </button>
-      </div>
-    </header>
+      </template>
+    </AppHeader>
 
     <!-- Main Content Area -->
     <div class="app-content">
@@ -312,25 +310,6 @@ onUnmounted(() => {
   background: var(--surface);
 }
 
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1.25rem;
-  background: var(--header-bg);
-  border-bottom: 1px solid var(--border-subtle);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  position: relative;
-  z-index: 10;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
 .back-button {
   display: flex;
   align-items: center;
@@ -358,12 +337,8 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
   max-width: 200px;
-}
-
-.header-right {
-  display: flex;
-  gap: 0.5rem;
 }
 
 .header-button {
@@ -479,14 +454,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 640px) {
-  .app-header {
-    padding: 0.625rem 1rem;
-  }
-
-  .current-script-name {
-    display: none;
-  }
-
   .debug-sidebar {
     position: fixed;
     inset: 0;
