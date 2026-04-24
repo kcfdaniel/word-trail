@@ -54,6 +54,10 @@ const currentLang = computed(() => {
   return languages.find(l => l.code === props.currentLanguage) || languages[0]
 })
 
+const selectorTitle = computed(() => {
+  return currentLang.value?.native || currentLang.value?.name || props.currentLanguage
+})
+
 const filteredLanguages = computed(() => {
   if (!searchQuery.value.trim()) return languages
 
@@ -170,7 +174,7 @@ onUnmounted(() => {
     <button
       class="selector-button"
       :class="{ 'selector-button--open': isOpen }"
-      :title="$t('languageSelector.tooltip', { name: currentLang?.native })"
+      :title="selectorTitle"
       @click="toggleDropdown"
     >
       <span class="selector-flag">{{ currentLang?.flag }}</span>

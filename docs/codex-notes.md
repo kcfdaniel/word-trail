@@ -28,6 +28,8 @@
 - Example: in Nuxt, prefer `useState` for serializable shared state instead of reaching for a generic shared-state helper by default.
 - For non-serializable shared client state, prefer a per-app runtime store over module-level refs in composables.
 - Example: DOM nodes, `Text` nodes, and browser instances should not be pushed through SSR state just to make them shared.
+- Use `useCookie` for small SSR-friendly preferences that should round-trip through server and client.
+- Do not force large client-side document data into cookies; cookie size and request overhead make that a poor fit.
 
 ## Composition Boundaries
 

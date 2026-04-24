@@ -1,4 +1,3 @@
-import { useStorage } from '@vueuse/core'
 import { speechLangToI18nLocale } from '~/utils/languageMapping'
 
 interface SpeechRecognitionEvent extends Event {
@@ -77,7 +76,7 @@ const KNOWN_ERROR_CODES = new Set([
 ])
 
 const SILENCE_RESET_DELAY = 2000
-const LANGUAGE_STORAGE_KEY = 'wordtrail-language'
+const LANGUAGE_COOKIE_KEY = 'wordtrail-language'
 const DEFAULT_LANGUAGE = 'en-US'
 
 let recognition: SpeechRecognition | null = null
@@ -97,7 +96,9 @@ export const useSpeech = () => {
   const interimTranscript = useState('speech:interimTranscript', () => '')
   const confidence = useState('speech:confidence', () => 0)
   const errorCode = useState<string | null>('speech:errorCode', () => null)
-  const languageStorage = useStorage(LANGUAGE_STORAGE_KEY, DEFAULT_LANGUAGE)
+  const languageCookie = useCookie(LANGUAGE_COOKIE_KEY, {
+    default: () => DEFAULT_LANGUAGE,
+  })
 
   const error = computed(() => {
     if (!errorCode.value) return null
@@ -110,10 +111,10 @@ export const useSpeech = () => {
   }
 
   const language = computed({
-    get: () => languageStorage.value,
+    get: () => languageCookie.value,
     set: (lang: string) => {
-      if (languageStorage.value === lang) return
-      languageStorage.value = lang
+      if (languageCookie.value === lang) return
+      languageCookie.value = lang
     },
   })
 
@@ -240,7 +241,7 @@ export const useSpeech = () => {
     errorCode.value = null
   }
 
-  watch(languageStorage, applyLanguage, { immediate: true })
+  watch(languageCookie, applyLanguage, { immediate: true })
 
   onMounted(() => {
     initRecognition()
