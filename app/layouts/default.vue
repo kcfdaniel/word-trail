@@ -1,23 +1,13 @@
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core'
+const { language } = useSpeech()
+const { scripts, isLoaded } = useScriptManager()
 
-const { language, setLanguage } = useSpeech()
-const { scripts } = useScriptManager()
-
-const languageStorage = useStorage('wordtrail-language', 'en-US', undefined, {
-  listenToStorageChanges: true,
+// Hold the logo at '/' until useScriptManager has hydrated from localStorage;
+// otherwise the prerendered '/' would mismatch a returning user's '/scripts'.
+const logoLink = computed(() => {
+  if (!isLoaded.value) return '/'
+  return scripts.value.length > 0 ? '/scripts' : '/'
 })
-
-watch(languageStorage, (saved) => {
-  if (saved) setLanguage(saved)
-}, { immediate: true })
-
-const handleLanguageSelect = (lang: string) => {
-  setLanguage(lang)
-  languageStorage.value = lang
-}
-
-const logoLink = computed(() => (scripts.value.length > 0 ? '/scripts' : '/'))
 </script>
 
 <template>
@@ -37,7 +27,7 @@ const logoLink = computed(() => (scripts.value.length > 0 ? '/scripts' : '/'))
       <template #right>
         <LanguageSelector
           :current-language="language"
-          @select="handleLanguageSelect"
+          @select="language = $event"
         />
       </template>
     </AppHeader>

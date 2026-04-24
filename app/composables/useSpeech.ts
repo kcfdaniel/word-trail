@@ -1,3 +1,4 @@
+import { useStorage } from '@vueuse/core'
 import { speechLangToI18nLocale } from '~/utils/languageMapping'
 
 interface SpeechRecognitionEvent extends Event {
@@ -55,12 +56,7 @@ export interface SpeechResult {
   isFinal: boolean
 }
 
-// Errors we treat as transient and should silently recover from.
-// See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognitionErrorEvent/error
 const SILENT_ERRORS = new Set(['no-speech', 'aborted'])
-
-// Errors that indicate a misconfiguration the user must fix — stop retrying
-// so we don't loop on a permission denial or an unsupported language.
 const FATAL_ERRORS = new Set([
   'not-allowed',
   'service-not-allowed',
@@ -68,9 +64,6 @@ const FATAL_ERRORS = new Set([
   'language-not-supported',
   'bad-grammar',
 ])
-
-// Error codes we have dedicated translations for. Anything outside this
-// set falls through to `speech.errors.unknown`.
 const KNOWN_ERROR_CODES = new Set([
   'no-speech',
   'aborted',
@@ -83,54 +76,69 @@ const KNOWN_ERROR_CODES = new Set([
   'not-available',
 ])
 
+const SILENCE_RESET_DELAY = 2000
+const LANGUAGE_STORAGE_KEY = 'wordtrail-language'
+const DEFAULT_LANGUAGE = 'en-US'
+
+let recognition: SpeechRecognition | null = null
+let shouldRestart = false
+let silenceTimeout: ReturnType<typeof setTimeout> | null = null
+
+const getErrorKey = (code: string) => {
+  return KNOWN_ERROR_CODES.has(code) ? code : 'unknown'
+}
+
 export const useSpeech = () => {
   const { t, setLocale } = useI18n()
-  const translateError = (code: string): string => {
-    const key = KNOWN_ERROR_CODES.has(code) ? code : 'unknown'
-    return t(`speech.errors.${key}`)
+
+  const isListening = useState('speech:isListening', () => false)
+  const isSupported = useState('speech:isSupported', () => false)
+  const transcript = useState('speech:transcript', () => '')
+  const interimTranscript = useState('speech:interimTranscript', () => '')
+  const confidence = useState('speech:confidence', () => 0)
+  const errorCode = useState<string | null>('speech:errorCode', () => null)
+  const languageStorage = useStorage(LANGUAGE_STORAGE_KEY, DEFAULT_LANGUAGE)
+
+  const error = computed(() => {
+    if (!errorCode.value) return null
+    return t(`speech.errors.${getErrorKey(errorCode.value)}`)
+  })
+
+  const applyLanguage = (lang: string) => {
+    if (recognition) recognition.lang = lang
+    void setLocale(speechLangToI18nLocale(lang))
   }
 
-  const isListening = ref(false)
-  const isSupported = ref(false)
-  const transcript = ref('')
-  const interimTranscript = ref('')
-  const confidence = ref(0)
-  const error = ref<string | null>(null)
-  const language = ref('en-US')
-
-  let recognition: SpeechRecognition | null = null
-  let shouldRestart = false
-
-  // Silence detection - reset transcript after 2 seconds of no speech
-  const SILENCE_RESET_DELAY = 2000
-  let silenceTimeout: ReturnType<typeof setTimeout> | null = null
+  const language = computed({
+    get: () => languageStorage.value,
+    set: (lang: string) => {
+      if (languageStorage.value === lang) return
+      languageStorage.value = lang
+    },
+  })
 
   const clearSilenceTimeout = () => {
-    if (silenceTimeout) {
-      clearTimeout(silenceTimeout)
-      silenceTimeout = null
-    }
+    if (!silenceTimeout) return
+    clearTimeout(silenceTimeout)
+    silenceTimeout = null
   }
 
   const startSilenceTimeout = () => {
     clearSilenceTimeout()
     silenceTimeout = setTimeout(() => {
-      // Only reset if still listening (user hasn't stopped)
-      if (isListening.value) {
-        transcript.value = ''
-        interimTranscript.value = ''
-      }
+      if (!isListening.value) return
+      transcript.value = ''
+      interimTranscript.value = ''
     }, SILENCE_RESET_DELAY)
   }
 
   const initRecognition = () => {
-    if (!import.meta.client) return
+    if (!import.meta.client || recognition) return
 
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognitionAPI) {
       isSupported.value = false
-      console.error('not available')
-      error.value = translateError('not-available')
+      errorCode.value = 'not-available'
       return
     }
 
@@ -143,7 +151,7 @@ export const useSpeech = () => {
 
     recognition.onstart = () => {
       isListening.value = true
-      error.value = null
+      errorCode.value = null
     }
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -167,21 +175,16 @@ export const useSpeech = () => {
       }
 
       if (final) {
-        transcript.value = (transcript.value + ' ' + final).trim()
+        transcript.value = `${transcript.value} ${final}`.trim()
       }
       interimTranscript.value = interim
-
-      // Reset silence timer on any speech activity
       startSilenceTimeout()
     }
 
     recognition.onerror = (event) => {
       if (SILENT_ERRORS.has(event.error)) return
-      console.error('recognition error', event)
-      error.value = translateError(event.error)
 
-      // Stop auto-restart for errors the user must address (permission, hardware,
-      // unsupported language) so we don't loop and keep failing.
+      errorCode.value = event.error
       if (FATAL_ERRORS.has(event.error)) {
         shouldRestart = false
       }
@@ -190,33 +193,29 @@ export const useSpeech = () => {
 
     recognition.onend = () => {
       isListening.value = false
-      if (shouldRestart) {
-        setTimeout(() => {
-          if (shouldRestart && recognition) {
-            recognition.start()
-          }
-        }, 100)
-      }
+      if (!shouldRestart || !recognition) return
+
+      setTimeout(() => {
+        if (shouldRestart && recognition) {
+          recognition.start()
+        }
+      }, 100)
     }
   }
 
   const start = () => {
-    if (!recognition) {
-      initRecognition()
-    }
+    initRecognition()
     if (!recognition || !isSupported.value) return
 
     shouldRestart = true
-    error.value = null
+    errorCode.value = null
     recognition.lang = language.value
 
     try {
       recognition.start()
     }
     catch (e) {
-      if ((e as Error).message?.includes('already started')) {
-        return
-      }
+      if ((e as Error).message?.includes('already started')) return
       throw e
     }
   }
@@ -224,19 +223,13 @@ export const useSpeech = () => {
   const stop = () => {
     shouldRestart = false
     clearSilenceTimeout()
-    if (recognition) {
-      recognition.stop()
-    }
+    if (recognition) recognition.stop()
     isListening.value = false
   }
 
   const toggle = () => {
-    if (isListening.value) {
-      stop()
-    }
-    else {
-      start()
-    }
+    if (isListening.value) stop()
+    else start()
   }
 
   const reset = () => {
@@ -244,26 +237,13 @@ export const useSpeech = () => {
     transcript.value = ''
     interimTranscript.value = ''
     confidence.value = 0
-    error.value = null
+    errorCode.value = null
   }
 
-  const setLanguage = (lang: string) => {
-    language.value = lang
-    if (recognition) {
-      recognition.lang = lang
-    }
-    // Keep the app's UI locale in lockstep with the speech-recognition language.
-    const i18nLocale = speechLangToI18nLocale(lang)
-    void setLocale(i18nLocale)
-  }
+  watch(languageStorage, applyLanguage, { immediate: true })
 
   onMounted(() => {
     initRecognition()
-  })
-
-  onUnmounted(() => {
-    clearSilenceTimeout()
-    stop()
   })
 
   return {
@@ -272,12 +252,11 @@ export const useSpeech = () => {
     transcript: readonly(transcript),
     interimTranscript: readonly(interimTranscript),
     confidence: readonly(confidence),
-    error: readonly(error),
+    error,
     language,
     start,
     stop,
     toggle,
     reset,
-    setLanguage,
   }
 }

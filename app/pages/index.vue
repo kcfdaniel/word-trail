@@ -19,7 +19,7 @@ watch([isLoaded, scripts], ([loaded, scriptsList]) => {
 }, { immediate: true })
 
 // Handle start reading from welcome landing
-const handleStartReading = (scriptTitle: string, scriptContentHtml: string, _language: string) => {
+const handleStartReading = (scriptTitle: string, scriptContentHtml: string) => {
   const newScript = createScript(scriptTitle, scriptContentHtml)
   setCurrentScript(newScript)
   autoStartListening.value = true
@@ -100,7 +100,7 @@ const closeReader = () => {
 }
 
 .landing-page {
-  height: 100dvh;
+  height: 100%;
   background: var(--surface);
 }
 

@@ -13,19 +13,6 @@ export interface Script {
 const STORAGE_KEY = 'wordtrail-scripts'
 const CURRENT_SCRIPT_KEY = 'wordtrail-current-script'
 
-// Module-level singletons — shared across every useScriptManager() call,
-// so consumers see the same reactive state.
-const scripts = useStorage<Script[]>(STORAGE_KEY, [], undefined, {
-  deep: true,
-  listenToStorageChanges: true,
-  writeDefaults: true,
-})
-const currentScriptId = useStorage<string | null>(CURRENT_SCRIPT_KEY, null, undefined, {
-  listenToStorageChanges: true,
-  writeDefaults: true,
-})
-const isLoaded = ref(false)
-
 const normalizeScript = (script: Partial<Script> & { content?: string }): Script => {
   const content = typeof script?.content === 'string' ? script.content : ''
   const contentHtml = typeof script?.contentHtml === 'string'
@@ -41,21 +28,29 @@ const normalizeScript = (script: Partial<Script> & { content?: string }): Script
   }
 }
 
-const normalizeStoredScripts = () => {
-  const normalized = scripts.value.map(normalizeScript)
-  if (JSON.stringify(scripts.value) !== JSON.stringify(normalized)) {
-    scripts.value = normalized
-  }
-  if (currentScriptId.value && !normalized.some(s => s.id === currentScriptId.value)) {
-    currentScriptId.value = null
-  }
-}
-
 export const useScriptManager = () => {
+  const scripts = useState<Script[]>('script-manager:scripts', () =>
+    useStorage<Script[]>(STORAGE_KEY, []),
+  )
+  const currentScriptId = useState<string | null>('script-manager:current-script-id', () =>
+    useStorage<string | null>(CURRENT_SCRIPT_KEY, null),
+  )
+  const isLoaded = useState('script-manager:isLoaded', () => false)
+
   const currentScript = computed(() => {
     if (!currentScriptId.value) return null
     return scripts.value.find(s => s.id === currentScriptId.value) ?? null
   })
+
+  const normalizeStoredScripts = () => {
+    const normalized = scripts.value.map(normalizeScript)
+    if (JSON.stringify(scripts.value) !== JSON.stringify(normalized)) {
+      scripts.value = normalized
+    }
+    if (currentScriptId.value && !normalized.some(s => s.id === currentScriptId.value)) {
+      currentScriptId.value = null
+    }
+  }
 
   const setCurrentScript = (script: Script | null) => {
     currentScriptId.value = script?.id ?? null

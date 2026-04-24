@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import type { MatchResult } from '~/composables/useSpeechMatch'
-import { useStorage } from '@vueuse/core'
 
 const props = defineProps<{
   autoStart?: boolean
@@ -18,24 +18,13 @@ const {
   error,
   language,
   toggle: toggleSpeech,
+  stop: stopSpeech,
   reset: resetSpeech,
-  setLanguage,
 } = useSpeech()
 
-// Persist language selection reactively across views and reloads.
-const languageStorage = useStorage('wordtrail-language', 'en-US', undefined, {
-  listenToStorageChanges: true,
-})
-
-watch(languageStorage, (savedLanguage) => {
-  if (savedLanguage) {
-    setLanguage(savedLanguage)
-  }
-}, { immediate: true })
-
 const handleLanguageSelect = (lang: string) => {
-  setLanguage(lang)
-  languageStorage.value = lang
+  if (language.value === lang) return
+  language.value = lang
   if (isListening.value) {
     resetSpeech()
     toggleSpeech()
@@ -44,16 +33,19 @@ const handleLanguageSelect = (lang: string) => {
 
 const { currentScript } = useScriptManager()
 
+const richTextHighlight = useRichTextHighlightStore()
 const {
   wordPositions,
   currentIndex,
   progress,
+  getNormalizedWords,
+} = storeToRefs(richTextHighlight)
+const {
   handleMatch,
   setPositionAt,
   resetProgress,
-  getNormalizedWords,
   clearAllHighlights,
-} = useRichTextHighlight()
+} = richTextHighlight
 
 onMounted(() => {
   // Auto-start listening if autoStart prop is true
@@ -140,6 +132,9 @@ const goBack = () => {
 }
 
 onUnmounted(() => {
+  // The reader owns the mic lifecycle: stop recognition when the overlay
+  // closes so it doesn't keep listening in the background.
+  stopSpeech()
   clearAllHighlights()
 })
 </script>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 /**
  * RichTextTeleprompter
  *
@@ -24,14 +25,17 @@ const emit = defineEmits<{
   'word-click': [wordIndex: number]
 }>()
 
+const richTextHighlight = useRichTextHighlightStore()
 const {
   wordPositions,
   currentIndex,
   isSupported,
+} = storeToRefs(richTextHighlight)
+const {
   initializeWordIndex,
   getWordAtPoint,
   resetProgress,
-} = useRichTextHighlight()
+} = richTextHighlight
 
 const scriptContainer = ref<HTMLElement | null>(null)
 

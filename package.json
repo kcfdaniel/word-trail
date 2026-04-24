@@ -29,12 +29,14 @@
     "@nuxt/test-utils": "3.23.0",
     "@nuxt/ui": "^4.4.0",
     "@nuxtjs/i18n": "^10.2.4",
+    "@pinia/nuxt": "0.11.3",
     "@tailwindcss/vite": "^4.1.18",
     "@unhead/vue": "^2.1.2",
     "@vite-pwa/nuxt": "1.1.0",
     "@vueuse/core": "^14.2.1",
     "ckeditor5": "^47.5.0",
     "nuxt": "^4.4.2",
+    "pinia": "^3.0.4",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
@@ -49,5 +51,5 @@
     "vitest": "^4.0.18",
     "vue-tsc": "^3.2.4"
   },
-  "packageManager": "pnpm@10.28.1"
+  "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8"
 }

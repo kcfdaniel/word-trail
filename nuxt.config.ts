@@ -12,6 +12,7 @@ export default defineNuxtConfig({
     '@nuxt/test-utils',
     '@nuxtjs/i18n',
     '@vite-pwa/nuxt',
+    '@pinia/nuxt',
   ],
 
   devtools: {
@@ -59,7 +60,6 @@ export default defineNuxtConfig({
   i18n: {
     defaultLocale: 'en',
     strategy: 'no_prefix',
-    lazy: true,
     // We drive locale selection off the stored speech-recognition language,
     // not URL or browser detection.
     detectBrowserLanguage: false,
