@@ -217,6 +217,7 @@ const handleCardKeydown = (event: KeyboardEvent) => {
           tag="p"
           class="keyboard-hint"
           keypath="welcome.keyboardHint"
+          scope="global"
         >
           <template #keys>
             <kbd>{{ isMac ? '⌘' : 'Ctrl' }}</kbd> + <kbd>Enter</kbd>

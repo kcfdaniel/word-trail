@@ -30,10 +30,10 @@ const normalizeScript = (script: Partial<Script> & { content?: string }): Script
 
 export const useScriptManager = () => {
   const scripts = useState<Script[]>('script-manager:scripts', () =>
-    useStorage<Script[]>(STORAGE_KEY, []),
+    useStorage(STORAGE_KEY, []),
   )
   const currentScriptId = useState<string | null>('script-manager:current-script-id', () =>
-    useStorage<string | null>(CURRENT_SCRIPT_KEY, null),
+    useStorage(CURRENT_SCRIPT_KEY, null),
   )
   const isLoaded = useState('script-manager:isLoaded', () => false)
 
@@ -102,7 +102,9 @@ export const useScriptManager = () => {
     catch (e) {
       console.error('Failed to load scripts:', e)
     }
-    isLoaded.value = true
+    setTimeout(() => {
+      isLoaded.value = true
+    }, 500)
   })
 
   return {
