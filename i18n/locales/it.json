@@ -47,6 +47,8 @@
     "toggleDebug": "Mostra/nascondi pannello di debug",
     "resetProgress": "Reimposta avanzamento",
     "editScript": "Modifica script",
+    "startListening": "Inizia ad ascoltare",
+    "stopListening": "Ferma l'ascolto",
     "apiWarning": "Il tuo browser non supporta l'evidenziazione avanzata. È in uso la modalità semplificata."
   },
   "editor": {

@@ -47,6 +47,8 @@
     "toggleDebug": "切换调试面板",
     "resetProgress": "重置进度",
     "editScript": "编辑脚本",
+    "startListening": "开始聆听",
+    "stopListening": "停止聆听",
     "apiWarning": "当前浏览器不支持高级高亮功能,已切换到简化模式。"
   },
   "editor": {

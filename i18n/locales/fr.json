@@ -47,6 +47,8 @@
     "toggleDebug": "Afficher/masquer le panneau de débogage",
     "resetProgress": "Réinitialiser la progression",
     "editScript": "Modifier le script",
+    "startListening": "Commencer l'écoute",
+    "stopListening": "Arrêter l'écoute",
     "apiWarning": "Ton navigateur ne prend pas en charge le surlignage avancé. Mode simplifié activé."
   },
   "editor": {

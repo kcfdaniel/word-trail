@@ -47,6 +47,8 @@
     "toggleDebug": "Debugpaneel in-/uitschakelen",
     "resetProgress": "Voortgang resetten",
     "editScript": "Script bewerken",
+    "startListening": "Luisteren starten",
+    "stopListening": "Luisteren stoppen",
     "apiWarning": "Je browser ondersteunt geen geavanceerde markering. Vereenvoudigde modus is actief."
   },
   "editor": {

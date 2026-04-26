@@ -47,6 +47,8 @@
     "toggleDebug": "Alternar painel de depuração",
     "resetProgress": "Redefinir progresso",
     "editScript": "Editar roteiro",
+    "startListening": "Começar a ouvir",
+    "stopListening": "Parar de ouvir",
     "apiWarning": "Seu navegador não suporta destaque avançado. Usando modo simplificado."
   },
   "editor": {

@@ -47,6 +47,8 @@
     "toggleDebug": "디버그 패널 전환",
     "resetProgress": "진행 초기화",
     "editScript": "스크립트 편집",
+    "startListening": "듣기 시작",
+    "stopListening": "듣기 중지",
     "apiWarning": "이 브라우저는 고급 하이라이트를 지원하지 않습니다. 단순 모드를 사용합니다."
   },
   "editor": {

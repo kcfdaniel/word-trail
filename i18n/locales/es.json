@@ -47,6 +47,8 @@
     "toggleDebug": "Mostrar/ocultar panel de depuración",
     "resetProgress": "Reiniciar progreso",
     "editScript": "Editar guion",
+    "startListening": "Empezar a escuchar",
+    "stopListening": "Detener escucha",
     "apiWarning": "Tu navegador no admite el resaltado avanzado. Se está usando el modo simplificado."
   },
   "editor": {

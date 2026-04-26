@@ -47,6 +47,8 @@
     "toggleDebug": "Toggle debug panel",
     "resetProgress": "Reset progress",
     "editScript": "Edit script",
+    "startListening": "Start listening",
+    "stopListening": "Stop listening",
     "apiWarning": "Your browser doesn't support advanced highlighting. Using simplified mode."
   },
   "editor": {

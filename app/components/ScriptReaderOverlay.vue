@@ -211,7 +211,7 @@ onUnmounted(() => {
 
     <!-- Main Content Area -->
     <div class="app-content">
-      <main class="app-main">
+      <div class="app-main">
         <RichTextTeleprompter
           :html-content="currentScript?.contentHtml ?? ''"
           :progress="progress"
@@ -260,7 +260,7 @@ onUnmounted(() => {
             {{ error }}
           </div>
         </Transition>
-      </main>
+      </div>
 
       <Transition name="debug-slide">
         <aside

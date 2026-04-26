@@ -47,6 +47,8 @@
     "toggleDebug": "Debug-Panel umschalten",
     "resetProgress": "Fortschritt zurücksetzen",
     "editScript": "Skript bearbeiten",
+    "startListening": "Zuhören starten",
+    "stopListening": "Zuhören stoppen",
     "apiWarning": "Dein Browser unterstützt das erweiterte Hervorheben nicht. Vereinfachter Modus aktiv."
   },
   "editor": {

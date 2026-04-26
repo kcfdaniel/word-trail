@@ -60,7 +60,7 @@ const handleCardKeydown = (event: KeyboardEvent) => {
     <div class="ambient-glow ambient-glow--2" />
 
     <!-- Main content -->
-    <main class="landing-main">
+    <div class="landing-main">
       <div class="landing-content h-full">
         <!-- Hero section -->
         <div class="hero-section">
@@ -224,7 +224,7 @@ const handleCardKeydown = (event: KeyboardEvent) => {
           </template>
         </i18n-t>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 

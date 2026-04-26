@@ -47,6 +47,8 @@
     "toggleDebug": "切換除錯面板",
     "resetProgress": "重設進度",
     "editScript": "編輯腳本",
+    "startListening": "開始聆聽",
+    "stopListening": "停止聆聽",
     "apiWarning": "此瀏覽器不支援進階高亮功能,已切換至簡化模式。"
   },
   "editor": {

@@ -47,6 +47,8 @@
     "toggleDebug": "デバッグパネルを切り替える",
     "resetProgress": "進捗をリセット",
     "editScript": "スクリプトを編集",
+    "startListening": "聞き取りを開始",
+    "stopListening": "聞き取りを停止",
     "apiWarning": "このブラウザは高度なハイライトをサポートしていません。簡易モードを使用します。"
   },
   "editor": {

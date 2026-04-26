@@ -98,6 +98,9 @@ const handleReset = () => {
     <div
       ref="scriptContainer"
       class="script-container"
+      tabindex="0"
+      role="region"
+      :aria-label="$t('scripts.contentLabel')"
       @click="handleContentClick"
     >
       <RichTextEditor
@@ -135,6 +138,8 @@ const handleReset = () => {
       <button
         class="control-button control-button--primary"
         :class="{ 'control-button--listening': isListening }"
+        :aria-label="isListening ? $t('reader.stopListening') : $t('reader.startListening')"
+        :aria-pressed="isListening"
         @click="emit('toggle-listening')"
       >
         <svg
