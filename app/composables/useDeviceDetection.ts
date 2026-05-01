@@ -1,6 +1,11 @@
 import { ref } from 'vue'
 
-export function useDeviceDetection() {
-  const isMobileDevice = ref(navigator.maxTouchPoints > 0)
+export const useDeviceDetection = () => {
+  const isMobileDevice = ref(false)
+
+  if (typeof navigator !== 'undefined') {
+    isMobileDevice.value = navigator.maxTouchPoints > 0
+  }
+
   return { isMobileDevice }
 }
