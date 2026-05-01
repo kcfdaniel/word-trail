@@ -47,7 +47,7 @@ const closeReader = () => {
     >
       <div
         v-if="!isLoaded"
-        class="loading-state inset-0 fixed z-1000"
+        class="loading-state inset-0 absolute z-1"
       >
         <div class="loader-content">
           <img

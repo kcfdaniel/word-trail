@@ -33,13 +33,6 @@ const canStart = computed(() => plainContent.value.trim().length > 0)
 // Platform detection for keyboard hint
 const { isMobileDevice } = useDeviceDetection()
 
-const isMac = computed(() => {
-  if (import.meta.client) {
-    return navigator.platform?.includes('Mac')
-  }
-  return false
-})
-
 const handleStart = () => {
   if (!canStart.value) return
   emit('start-reading', title.value || t('common.untitledScript'), contentHtml.value)
