@@ -101,9 +101,7 @@ export const useScriptManager = () => {
       scripts.value = []
       currentScriptId.value = null
     }
-    setTimeout(() => {
-      isLoaded.value = true
-    }, 500)
+    isLoaded.value = true
   })
 
   return {

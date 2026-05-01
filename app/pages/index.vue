@@ -35,6 +35,11 @@ const closeReader = () => {
 
 <template>
   <div class="landing-page">
+    <!-- Welcome Landing when no scripts -->
+    <WelcomeLanding
+      v-if="scripts.length === 0"
+      @start-reading="handleStartReading"
+    />
     <!-- Loading State -->
     <Transition
       name="fade"
@@ -42,7 +47,7 @@ const closeReader = () => {
     >
       <div
         v-if="!isLoaded"
-        class="loading-state"
+        class="loading-state inset-0 fixed z-1000"
       >
         <div class="loader-content">
           <img
@@ -57,12 +62,6 @@ const closeReader = () => {
           </div>
         </div>
       </div>
-
-      <!-- Welcome Landing when no scripts -->
-      <WelcomeLanding
-        v-else-if="scripts.length === 0"
-        @start-reading="handleStartReading"
-      />
     </Transition>
 
     <!-- Script Reader Overlay -->

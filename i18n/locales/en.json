@@ -70,5 +70,21 @@
       "not-available": "Speech recognition is not available in this browser. Try Chrome, Edge, or Safari.",
       "unknown": "Speech recognition error."
     }
+  },
+  "footer": {
+    "tagline": "A voice-activated teleprompter that follows your pace.",
+    "navLabel": "Footer",
+    "product": "Product",
+    "legal": "Legal",
+    "resources": "Resources",
+    "home": "Home",
+    "scripts": "Scripts",
+    "about": "About",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "github": "GitHub",
+    "contact": "Contact",
+    "rights": "All rights reserved.",
+    "builtWith": "Built with Nuxt and the Web Speech API."
   }
 }

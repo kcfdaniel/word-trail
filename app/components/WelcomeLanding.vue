@@ -31,6 +31,8 @@ const wordCount = computed(() => {
 const canStart = computed(() => plainContent.value.trim().length > 0)
 
 // Platform detection for keyboard hint
+const { isMobileDevice } = useDeviceDetection()
+
 const isMac = computed(() => {
   if (import.meta.client) {
     return navigator.platform?.includes('Mac')
@@ -214,6 +216,7 @@ const handleCardKeydown = (event: KeyboardEvent) => {
 
         <!-- Subtle hint -->
         <i18n-t
+          v-if="!isMobileDevice"
           tag="p"
           class="keyboard-hint"
           keypath="welcome.keyboardHint"
@@ -223,6 +226,52 @@ const handleCardKeydown = (event: KeyboardEvent) => {
             <kbd>{{ isMac ? '⌘' : 'Ctrl' }}</kbd> + <kbd>Enter</kbd>
           </template>
         </i18n-t>
+
+        <!-- Footer links: only entry point to about/privacy/terms from `/` -->
+        <nav
+          v-if="!isMobileDevice"
+          class="welcome-footer-links"
+          :aria-label="$t('footer.navLabel')"
+        >
+          <NuxtLink
+            to="/about"
+            class="welcome-footer-link"
+          >
+            {{ $t('footer.about') }}
+          </NuxtLink>
+          <span
+            class="welcome-footer-sep"
+            aria-hidden="true"
+          >·</span>
+          <NuxtLink
+            to="/privacy"
+            class="welcome-footer-link"
+          >
+            {{ $t('footer.privacy') }}
+          </NuxtLink>
+          <span
+            class="welcome-footer-sep"
+            aria-hidden="true"
+          >·</span>
+          <NuxtLink
+            to="/terms"
+            class="welcome-footer-link"
+          >
+            {{ $t('footer.terms') }}
+          </NuxtLink>
+          <span
+            class="welcome-footer-sep"
+            aria-hidden="true"
+          >·</span>
+          <a
+            href="https://github.com/kcfdaniel/word-trail"
+            class="welcome-footer-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ $t('footer.github') }}
+          </a>
+        </nav>
       </div>
     </div>
   </div>
@@ -509,6 +558,33 @@ const handleCardKeydown = (event: KeyboardEvent) => {
   font-family: var(--font-mono);
   font-size: 0.625rem;
   box-shadow: 0 1px 0 var(--border-subtle);
+}
+
+/* Footer links — same low-emphasis tier as the keyboard hint, but kept on
+   mobile because this is the only path to about/privacy/terms from `/`. */
+.welcome-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+}
+
+.welcome-footer-link {
+  color: var(--text-tertiary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.welcome-footer-link:hover {
+  color: var(--accent);
+}
+
+.welcome-footer-sep {
+  color: var(--text-tertiary);
+  opacity: 0.6;
 }
 
 /* Mobile adjustments */
