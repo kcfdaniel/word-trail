@@ -18,7 +18,6 @@
     "startButton": "읽기 시작",
     "browserWarning": "음성 인식은 Chrome, Edge, Safari 에서 가장 잘 작동합니다.",
     "firstScriptTitle": "첫 번째 스크립트",
-    "keyboardHint": "{keys} 로 시작",
     "wordCount": "{count} 단어"
   },
   "languageSelector": {

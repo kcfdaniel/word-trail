@@ -18,7 +18,6 @@
     "startButton": "開始朗讀",
     "browserWarning": "語音辨識在 Chrome、Edge 或 Safari 上效果最佳。",
     "firstScriptTitle": "我的第一個腳本",
-    "keyboardHint": "按 {keys} 開始",
     "wordCount": "{count} 個字"
   },
   "languageSelector": {

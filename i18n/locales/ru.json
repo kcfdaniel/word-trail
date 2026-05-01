@@ -18,7 +18,6 @@
     "startButton": "Начать чтение",
     "browserWarning": "Распознавание речи лучше всего работает в Chrome, Edge или Safari.",
     "firstScriptTitle": "Мой первый сценарий",
-    "keyboardHint": "{keys} чтобы начать",
     "wordCount": "{count} слово | {count} слова | {count} слов"
   },
   "languageSelector": {

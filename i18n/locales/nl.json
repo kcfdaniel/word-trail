@@ -18,7 +18,6 @@
     "startButton": "Beginnen met lezen",
     "browserWarning": "Spraakherkenning werkt het best in Chrome, Edge of Safari.",
     "firstScriptTitle": "Mijn eerste script",
-    "keyboardHint": "{keys} om te starten",
     "wordCount": "{count} woord | {count} woorden"
   },
   "languageSelector": {

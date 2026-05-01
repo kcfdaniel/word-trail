@@ -18,7 +18,6 @@
     "startButton": "Empezar a leer",
     "browserWarning": "El reconocimiento de voz funciona mejor en Chrome, Edge o Safari.",
     "firstScriptTitle": "Mi primer guion",
-    "keyboardHint": "{keys} para empezar",
     "wordCount": "{count} palabra | {count} palabras"
   },
   "languageSelector": {

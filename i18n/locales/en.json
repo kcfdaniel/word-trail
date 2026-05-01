@@ -18,7 +18,6 @@
     "startButton": "Start Reading",
     "browserWarning": "Speech recognition works best in Chrome, Edge, or Safari.",
     "firstScriptTitle": "My First Script",
-    "keyboardHint": "{keys} to start",
     "wordCount": "{count} word | {count} words"
   },
   "languageSelector": {

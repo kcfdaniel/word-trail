@@ -214,19 +214,6 @@ const handleCardKeydown = (event: KeyboardEvent) => {
           {{ $t('welcome.browserWarning') }}
         </p>
 
-        <!-- Subtle hint -->
-        <i18n-t
-          v-if="!isMobileDevice"
-          tag="p"
-          class="keyboard-hint"
-          keypath="welcome.keyboardHint"
-          scope="global"
-        >
-          <template #keys>
-            <kbd>{{ isMac ? '⌘' : 'Ctrl' }}</kbd> + <kbd>Enter</kbd>
-          </template>
-        </i18n-t>
-
         <!-- Footer links: only entry point to about/privacy/terms from `/` -->
         <nav
           v-if="!isMobileDevice"
@@ -541,25 +528,6 @@ const handleCardKeydown = (event: KeyboardEvent) => {
   color: #fbbf24;
 }
 
-/* Keyboard hint */
-.keyboard-hint {
-  text-align: center;
-  font-size: 0.6875rem;
-  color: var(--text-tertiary);
-  margin: 0;
-}
-
-.keyboard-hint kbd {
-  display: inline-block;
-  padding: 0.1rem 0.3rem;
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: 0.25rem;
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  box-shadow: 0 1px 0 var(--border-subtle);
-}
-
 /* Footer links — same low-emphasis tier as the keyboard hint, but kept on
    mobile because this is the only path to about/privacy/terms from `/`. */
 .welcome-footer-links {
@@ -605,10 +573,6 @@ const handleCardKeydown = (event: KeyboardEvent) => {
     padding: 1rem;
     gap: 0.875rem;
   }
-
-  .keyboard-hint {
-    display: none;
-  }
 }
 
 /* Animation on mount */
@@ -618,10 +582,6 @@ const handleCardKeydown = (event: KeyboardEvent) => {
 
 .script-card {
   animation: fadeInUp 0.6s ease-out 0.1s both;
-}
-
-.keyboard-hint {
-  animation: fadeIn 0.6s ease-out 0.3s both;
 }
 
 @keyframes fadeInUp {

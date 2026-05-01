@@ -18,7 +18,6 @@
     "startButton": "読み上げ開始",
     "browserWarning": "音声認識は Chrome、Edge、Safari での動作が最も安定します。",
     "firstScriptTitle": "最初のスクリプト",
-    "keyboardHint": "{keys} で開始",
     "wordCount": "{count} 語"
   },
   "languageSelector": {

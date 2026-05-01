@@ -18,7 +18,6 @@
     "startButton": "开始朗读",
     "browserWarning": "语音识别在 Chrome、Edge 或 Safari 上效果最佳。",
     "firstScriptTitle": "我的第一个脚本",
-    "keyboardHint": "按 {keys} 开始",
     "wordCount": "{count} 个词"
   },
   "languageSelector": {

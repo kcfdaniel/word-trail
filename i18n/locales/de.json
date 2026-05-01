@@ -18,7 +18,6 @@
     "startButton": "Lesen starten",
     "browserWarning": "Die Spracherkennung funktioniert am besten in Chrome, Edge oder Safari.",
     "firstScriptTitle": "Mein erstes Skript",
-    "keyboardHint": "{keys} zum Starten",
     "wordCount": "{count} Wort | {count} Wörter"
   },
   "languageSelector": {

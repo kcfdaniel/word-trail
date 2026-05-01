@@ -18,7 +18,6 @@
     "startButton": "Inizia a leggere",
     "browserWarning": "Il riconoscimento vocale funziona meglio su Chrome, Edge o Safari.",
     "firstScriptTitle": "Il mio primo script",
-    "keyboardHint": "{keys} per iniziare",
     "wordCount": "{count} parola | {count} parole"
   },
   "languageSelector": {

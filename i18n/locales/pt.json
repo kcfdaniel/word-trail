@@ -18,7 +18,6 @@
     "startButton": "Começar a ler",
     "browserWarning": "O reconhecimento de fala funciona melhor no Chrome, Edge ou Safari.",
     "firstScriptTitle": "Meu primeiro roteiro",
-    "keyboardHint": "{keys} para começar",
     "wordCount": "{count} palavra | {count} palavras"
   },
   "languageSelector": {
